@@ -1,6 +1,6 @@
 //db 연결 
 require("dotenv").config(); //env 파일 연결
-const db = require("mysql"); //db연결 모듈
+const db = require("mysql2"); //db연결 모듈
 
 const conn = db.createConnection({
     host : process.env.DB_HOST,
