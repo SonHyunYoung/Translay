@@ -9,54 +9,72 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@
 
 router
 .post("/signUp", async(req, res) => {
-    const {email, name, password, confirmPw} = req.body; //입력받은 인자들
+    const {email, name, password} = req.body; //입력받은 인자들
     let conn; //db 연결 변수
 
-    if(!email || !name || !password || confirmPw){ //하나라도 입력하지 않았을 경우
-        res.status(400).json({
+    if(!email || !name || !password){ //하나라도 입력하지 않았을 경우
+        return res.status(400).json({
             message : "필수 입력사항을 모두 입력해주세요."
         });
     }
 
-    if(!PASSWORD_REGEX.test(password)){ //비밀번호 보안 준수 여부 확인
-        res.status(400).json({
-            message : "비밀번호는 대소문자, 숫자, 특수기호 포함한 8글자 이상이어야합니다."
+    //이메일 중복 체크
+    const emailCheck = `SELECT * FROM usertbl WHERE email = ?`;
+
+    const [exist] = await pool.query(emailCheck, [email]);
+
+    if(exist.length > 0){
+        return res.status(400).json({
+            message : "이미 존재하는 이메일 입니다."
         });
     }
 
-    if(password != confirmPw){ //확인용 비밀번호가 일치하지 않는 경우
-        res.status(400).json({ 
-            error : "비밀번호가 일치하지 않습니다."
+    if(!PASSWORD_REGEX.test(password)){ //비밀번호 보안 준수 여부 확인
+        return res.status(400).json({
+            message : "비밀번호가 보안기준에 적합하지 않습니다.(8글자 이상, 대소문자 및 숫자, 특수기호 포함 필수)"
         });
     }
 
     const hashedPw = await bcrypt.hash(password, 10);
 
-    let emailCheck = `SELECT * FROM usertbl WHERE email = ?`;
+    const sql = `INSERT INTO usertbl (email, password, name)
+                 VALUES (?, ?, ?)`;
 
-    const exist = await pool.query(emailCheck, () => {
+    try{
+        await pool.query(sql, [email, name, hashedPw]);
 
-    })
+        return res.status(201).json({
+            message : "회원가입을 성공하였습니다."
+        });
+    } catch(err) {
+        console.error(`회원가입 중 오류 발생 : ${err}`);
+        
+        res.status(500).json({
+            message : "죄송합니다. 회원가입에 실패했습니다."
+        });
+    }
     
 })
 .get("/EmailCheck", async(req, res) => {
-    const email = req.body;
+    const email = req.query.email;
 
     if(!email){
-        res.status(400).json({
+        return res.status(400).json({
             message : "이메일은 필수 입력 입니다."
         });
     }
 
-    let checkSql = `SELECT * FROM usertbl WHERE email = ?`;
+    const checkSql = `SELECT * FROM usertbl WHERE email = ?`;
 
-    const check = pool.query(checkSql, [email], (err) => {
-
-    });
+    const check = await pool.query(checkSql, [email]);
 
     if(check.length > 0){
         res.status(400).json({
             message : "이미 가입이 된 이메일입니다."
         });
     };
+
+    return res.status(200).json({
+        message : "가입 가능한 이메일입니다."
+    });
 });
