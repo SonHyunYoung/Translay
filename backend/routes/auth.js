@@ -139,3 +139,5 @@ router
     }
 
 });
+
+module.exports = router;
