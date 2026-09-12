@@ -29,6 +29,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".OverlayService"
+            android:exported="false" />
+        <service
+            android:name=".CaptureService"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
+        <activity
+            android:name=".CaptureActivity"
+            android:exported="false" />
     </application>
+
 
 </manifest>

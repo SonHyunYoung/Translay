@@ -50,9 +50,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // 권한 상태 갱신
                 hasPermission = Settings.canDrawOverlays(context)
-                // 권한 없으면 다이얼로그 띄우기
                 showDialog = !hasPermission
             }
         }
@@ -69,7 +67,35 @@ fun MainScreen(modifier: Modifier = Modifier) {
         Text(
             text = if (hasPermission) "오버레이 권한: 허용됨" else "오버레이 권한: 필요함"
         )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ----- 오버레이 시작 버튼 (PoC 테스트용) -----
+        Button(
+            onClick = {
+                context.startService(Intent(context, OverlayService::class.java))
+            },
+            enabled = hasPermission   // 권한 있어야 활성화
+        ) {
+            Text("오버레이 시작")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ----- 오버레이 중지 버튼 -----
+        Button(onClick = {
+            context.stopService(Intent(context, OverlayService::class.java))
+        }) {
+            Text("오버레이 중지")
+        }
+
+        Button(onClick = {
+            context.startActivity(Intent(context, CaptureActivity::class.java))
+        }) {
+            Text("캡처 테스트")
+        }
     }
+
 
     // ----- 권한 안내 다이얼로그 -----
     if (showDialog) {
@@ -85,7 +111,6 @@ fun MainScreen(modifier: Modifier = Modifier) {
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
-                    // 설정 화면으로 이동
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:${context.packageName}")
