@@ -70,11 +70,11 @@ router
     //이메일 존재여부 검색
     const checkSql = `SELECT * FROM usertbl WHERE email = ?`; 
 
-    const check = await pool.query(checkSql, [email]); 
+    const [check] = await pool.query(checkSql, [email]); 
 
     //주석 확인
     if(check.length > 0){ 
-        res.status(409).json({
+        return res.status(409).json({
             message : "이미 가입 된 이메일입니다."
         });
     } 
