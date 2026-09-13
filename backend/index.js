@@ -4,6 +4,8 @@ const express = require("express"); // express 모듈 사용 선언
 const port = process.env.PORT;
 const app = express();
 
+app.use(express.json()); //json 읽어올 수 있게 선언
+
 app.use("/api/user", require("./routes/auth")); //회원 관련 API 라우터
 
 app.get("/", (req, res) => { //서버 작동확인
