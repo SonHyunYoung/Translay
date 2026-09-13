@@ -100,7 +100,7 @@ router
 
     try{ //유저 확인용 쿼리
 
-        const userInfo = pool.query("SELECT * FROM usertbl WHERE email = ?", [email]);
+        const [userInfo] = await pool.query("SELECT * FROM usertbl WHERE email = ?", [email]);
 
         if(userInfo.length === 0){ //유저 정보가 없을 경우
             return res.status(400).json({
