@@ -10,4 +10,4 @@ const conn = db.createConnection({
     database : process.env.DB_NAME
 })
 
-module.exports = conn;
+module.exports = conn.promise();
