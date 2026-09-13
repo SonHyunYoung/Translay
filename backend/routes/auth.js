@@ -26,7 +26,7 @@ router
 
     if(exist.length > 0){ 
         return res.status(400).json({
-            message : "이미 존재하는 이메일 입니다."
+            message : "이미 가입된 계정 입니다."
         });
     }
 
@@ -47,7 +47,7 @@ router
         await pool.query(sql, [email, hashedPw, name]);
 
         return res.status(201).json({
-            message : "회원가입을 성공하였습니다."
+            message : "회원가입에 성공하였습니다."
         });
     } catch(err) { //회원가입 실패
         console.error(`회원가입 중 오류 발생 : ${err}`);
@@ -75,7 +75,7 @@ router
     //주석 확인
     if(check.length > 0){ 
         res.status(409).json({
-            message : "이미 가입이 된 이메일입니다."
+            message : "이미 가입 된 이메일입니다."
         });
     } 
 
