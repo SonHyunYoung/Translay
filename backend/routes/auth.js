@@ -108,7 +108,9 @@ router
             });
         }
 
-        const isMatch = await bcrypt.compare(password, userInfo.password);
+        const user = userInfo[0];
+         
+        const isMatch = await bcrypt.compare(password, user.password);
         
         if(!isMatch){ //비밀번호 틀린 경우
             return res.status(400).json({
