@@ -44,7 +44,7 @@ router
 
     //회원가입 쿼리 
     try{ 
-        await pool.query(sql, [email, name, hashedPw]);
+        await pool.query(sql, [email, hashedPw, name]);
 
         return res.status(201).json({
             message : "회원가입을 성공하였습니다."
