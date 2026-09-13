@@ -31,7 +31,11 @@ class CaptureService : Service() {
 
     private var mediaProjection: MediaProjection? = null
     private lateinit var windowManager: WindowManager
-    private var captureButton: Button? = null
+    private var captureButton: android.view.View? = null
+
+
+
+
 
     // VirtualDisplay와 ImageReader를 멤버로 (한 번만 생성)
     private var imageReader: ImageReader? = null
@@ -93,12 +97,28 @@ class CaptureService : Service() {
     }
 
     private fun showCaptureButton() {
-        captureButton = Button(this).apply {
+        // 캡처 버튼 + 중지 버튼을 담을 레이아웃
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+        }
+
+        // 캡처 버튼
+        val captureBtn = Button(this).apply {
             text = "캡처"
+            setOnClickListener { captureScreen() }
+        }
+
+        // 중지 버튼
+        val stopBtn = Button(this).apply {
+            text = "중지"
             setOnClickListener {
-                captureScreen()
+                stopSelf()  // 서비스 종료 → onDestroy에서 정리됨
             }
         }
+
+        layout.addView(captureBtn)
+        layout.addView(stopBtn)
+        captureButton = layout  // 멤버 변수에 레이아웃 저장
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
