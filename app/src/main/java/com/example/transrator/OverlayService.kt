@@ -23,15 +23,14 @@ class OverlayService : Service() {
 
         // 빨간 네모 뷰 만들기
         overlayView = FrameLayout(this).apply {
-            setBackgroundColor(Color.argb(128, 255, 0, 0))  // 반투명 빨강
+            setBackgroundColor(Color.argb(230, 0, 255, 255))  // 반투명 빨강
         }
 
         // 오버레이 창 설정
         val params = WindowManager.LayoutParams(
-            600,   // 너비 (px)
-            300,   // 높이 (px)
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,  // 오버레이 타입
-            // 터치를 통과시키는 플래그 (게임 조작 유지)
+            WindowManager.LayoutParams.MATCH_PARENT,   // 너비 꽉
+            WindowManager.LayoutParams.MATCH_PARENT,   // 높이 꽉
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
             PixelFormat.TRANSLUCENT
