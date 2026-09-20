@@ -41,7 +41,7 @@ router
             [profileId]
         );
 
-        // 캐릭터 이외의 고유명사 조회
+        // 캐릭터 이외의 고유명사 조회 
         const [words] = await pool.query(
             "SELECT source, target FROM wordtbl WHERE profile_id = ?",
             [profileId]
