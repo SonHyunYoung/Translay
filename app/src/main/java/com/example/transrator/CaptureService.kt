@@ -5,6 +5,10 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -188,7 +192,7 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer 여기에_토큰_하드코딩"  // 테스트용
+        val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzg5OTI4NzIwLCJleHAiOjE3OTI1MjA3MjB9.hYEI_XRAaWGa5akCSdpRCZmeV4VQlyIiP15fc-cSqqU"  // 테스트용
         val profileId = 1  // 테스트용 프로필 ID
 
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
