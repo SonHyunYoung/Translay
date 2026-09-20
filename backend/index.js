@@ -6,8 +6,8 @@ const app = express();
 
 app.use(express.json()); //json 읽어올 수 있게 선언
 
-app.use("/api/user", require("./routes/auth")); //유저 관련 API 라우터
-app.use("/api/translate", require("./route/translate")); //번역 관련 API 라우터
+app.use("/api/auth", require("./routes/auth")); //유저 관련 API 라우터
+app.use("/api/translate", require("./routes/translate")); //번역 관련 API 라우터
 
 app.get("/", (req, res) => { //서버 작동확인
     return res.status(200).json({message : "서버 정상작동 확인"});
