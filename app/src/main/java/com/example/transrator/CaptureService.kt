@@ -171,17 +171,43 @@ class CaptureService : Service() {
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
-                // 인식된 전체 텍스트
                 android.util.Log.d("OCR", "===== 인식 결과 =====")
                 android.util.Log.d("OCR", visionText.text)
                 android.util.Log.d("OCR", "====================")
 
-                // 결과 저장 (나중에 화면 표시용)
                 CaptureResult.ocrText = visionText.text
+
+                // ↓ 여기 추가
+                if (visionText.text.isNotEmpty()) {
+                    requestTranslate(visionText.text)
+                }
             }
             .addOnFailureListener { e ->
                 android.util.Log.e("OCR", "OCR 실패: $e")
             }
+    }
+
+    private fun requestTranslate(text: String) {
+        val token = "Bearer 여기에_토큰_하드코딩"  // 테스트용
+        val profileId = 1  // 테스트용 프로필 ID
+
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.api.translate(
+                    token = token,
+                    request = TranslateRequest(
+                        profileId = profileId,
+                        text = text
+                    )
+                )
+
+                android.util.Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
+                CaptureResult.translatedText = response.translatedText
+
+            } catch (e: Exception) {
+                android.util.Log.e("TRANSLATE", "번역 실패: $e")
+            }
+        }
     }
 
     private fun startForegroundNotification() {
