@@ -223,5 +223,7 @@ class CaptureService : Service() {
 
 object CaptureResult {
     var bitmap: Bitmap? = null
-    var ocrText: String? = null   // 추가
+    var ocrText: String? = null
+
+    var translatedText: String? = null
 }
