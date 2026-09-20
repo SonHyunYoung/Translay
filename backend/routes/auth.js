@@ -140,6 +140,11 @@ router
         });
     }
 
+})
+.post("/logout", async(req, res) => {
+    res.status(200).json({
+        message : "로그아웃 성공"
+    });
 });
 
 module.exports = router;
