@@ -52,7 +52,7 @@ function buildPrompt({ text, sourceLanguage, glossary, characters, context }) {
 
   }
 
-  return `당신은 ${sourceLanguage} 서브컬처 게임의 스토리를 한국어로 번역하는 전문가입니다.
+  return `당신은 ${sourceLanguage}를 한국어로 번역하는 전문가입니다.
 아래 규칙을 반드시 따르세요:
 1. 등장인물 이름과 고유명사는 반드시 지정된 번역어를 사용하세요.
 2. 이전 대사의 흐름을 자연스럽게 이어받아 번역하세요.
