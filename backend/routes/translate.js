@@ -35,7 +35,7 @@ router
                     JSON_OBJECT('source', ct.source, 'target', ct.target, 'description', ct.description)
                 ) as terms
              FROM charactertbl c
-             LEFT JOIN characterterms tbl ct ON c.character_id = ct.character_id
+             LEFT JOIN charactertermtbl ct ON c.character_id = ct.character_id
              WHERE c.profile_id = ?
              GROUP BY c.character_id`,
             [profileId]
