@@ -120,8 +120,8 @@ router
 
         //로그인 성공
         const token = jwt.sign(
-            {id : userInfo.id, 
-            email : userInfo.email,
+            {id : userInfo[0].id, 
+            email : userInfo[0].email,
             },
             process.env.JWT_SECRET,
             {expiresIn : "30d"}
