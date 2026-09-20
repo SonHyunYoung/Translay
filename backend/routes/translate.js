@@ -16,7 +16,7 @@ router
     }
 
     try {
-        // 1. 프로필 소유권 검증
+        // 프로필 소유 검증
         const [profile] = await pool.query(
             "SELECT * FROM profiletbl WHERE profile_id = ? AND uid = ?",
             [profileId, req.user.id]
@@ -28,7 +28,7 @@ router
             });
         }
 
-        // 2. 캐릭터 + 호칭 조회
+        // 캐릭터 + 호칭 조회
         const [characters] = await pool.query(
             `SELECT c.character_id, c.source_name, c.target_name,
                 JSON_ARRAYAGG(
@@ -41,13 +41,13 @@ router
             [profileId]
         );
 
-        // 3. 단어(지명 등) 조회
+        // 캐릭터 이외의 고유명사 조회
         const [words] = await pool.query(
             "SELECT source, target FROM wordtbl WHERE profile_id = ?",
             [profileId]
         );
 
-        // 4. Gemini 호출
+        // Gemini API 호출
         const translatedText = await translate({
             text,
             sourceLanguage: profile[0].sourcelanguage,
