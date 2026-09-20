@@ -1,58 +1,73 @@
 const pool = require("../database/maria");
-
 const express = require("express");
+const { translate } = require("../services/gemini");
+const AuthMiddleWare = require("../middleware/auth");
+
 const router = express.Router();
 
-const { translate } = require('../services/gemini');
-
 router
-.post("/", async(req, res) => {
-    const { profileId, text, sourceLanguage, context } = req.body;
+.post("/", AuthMiddleWare, async (req, res) => {
+    const { profileId, text, context } = req.body;
+
+    if (!profileId || !text) {
+        return res.status(400).json({
+            message: "필수 입력사항을 모두 입력해주세요."
+        });
+    }
 
     try {
-        // 프로필 소유권 검증
-        const profile = await pool.query(
-        'SELECT * FROM game_profiles WHERE profile_id = ? AND user_id = ?',
-        [profileId, req.user.userId]
-        );
-        if (!profile.length) return res.status(403).json({ success: false, error: { code: 'FORBIDDEN' } });
-
-        // 캐릭터 + 캐릭터 용어 조회
-        const characters = await pool.query(
-        `SELECT c.*, 
-            JSON_ARRAYAGG(JSON_OBJECT('source', ct.source, 'target', ct.target, 'description', ct.description)) as terms
-        FROM characters c
-        LEFT JOIN character_terms ct ON c.character_id = ct.character_id
-        WHERE c.profile_id = ?
-        GROUP BY c.character_id`,
-        [profileId]
+        // 1. 프로필 소유권 검증
+        const [profile] = await pool.query(
+            "SELECT * FROM profiletbl WHERE profile_id = ? AND uid = ?",
+            [profileId, req.user.id]
         );
 
-        // 단어(지명 등) 조회
-        const glossary = await pool.query(
-        'SELECT source, target FROM words WHERE profile_id = ?',
-        [profileId]
+        if (profile.length === 0) {
+            return res.status(403).json({
+                message: "접근 권한이 없습니다."
+            });
+        }
+
+        // 2. 캐릭터 + 호칭 조회
+        const [characters] = await pool.query(
+            `SELECT c.character_id, c.source_name, c.target_name,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT('source', ct.source, 'target', ct.target, 'description', ct.description)
+                ) as terms
+             FROM charactertbl c
+             LEFT JOIN characterterms tbl ct ON c.character_id = ct.character_id
+             WHERE c.profile_id = ?
+             GROUP BY c.character_id`,
+            [profileId]
         );
 
-        // Gemini 호출
+        // 3. 단어(지명 등) 조회
+        const [words] = await pool.query(
+            "SELECT source, target FROM wordtbl WHERE profile_id = ?",
+            [profileId]
+        );
+
+        // 4. Gemini 호출
         const translatedText = await translate({
-        text,
-        sourceLanguage: profile[0].source_language,
-        glossary,
-        characters,
-        context: context || [],
+            text,
+            sourceLanguage: profile[0].sourcelanguage,
+            characters,
+            glossary: words,
+            context: context || []
         });
 
-        res.status(200).json({ 
-            success: true, 
-            data: { originalText: text, translatedText } });
+        return res.status(200).json({
+            message: "번역에 성공했습니다.",
+            originalText: text,
+            translatedText
+        });
 
     } catch (err) {
-        console.error(`번역 api 호출 중 오류 발생 : ${err}`);
+        console.error(`번역 중 오류 발생 : ${err}`);
 
-        res.status(500).json({ 
-            success: false, 
-            error: { code: 'GEMINI_API_ERROR', message: err.message } });
+        return res.status(500).json({
+            message: "번역 중 오류가 발생했습니다."
+        });
     }
 });
 
