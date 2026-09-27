@@ -9,6 +9,7 @@ app.use(express.json()); //json 읽어올 수 있게 선언
 app.use("/api/auth", require("./routes/auth")); //유저 관련 API 라우터
 app.use("/api/translate", require("./routes/translate")); //번역 관련 API 라우터
 app.use("/api/profile", require("./routes/profile")); //프로필 관련 API 라우터
+app.use("/api/word", require("./routes/word")); //단어 관련 API 라우터
 
 app.get("/", (req, res) => { //서버 작동확인
     return res.status(200).json({message : "서버 정상작동 확인"});
