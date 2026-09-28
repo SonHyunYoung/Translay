@@ -105,7 +105,7 @@ router
 
         //수정 
         const updateSql = `UPDATE wordtbl 
-                            SET source = ?, traget = ?, updated_at = NOW()
+                            SET source = ?, target = ?, updated_at = NOW()
                             WHERE profile_id = ? AND word_id = ?`;
 
         await pool.query(updateSql, [source, target, profileId, wordId]);
