@@ -64,7 +64,7 @@ router
 })
 .get("/", AuthMiddleWare, async(req, res) => { //프로필 조회
     try{
-        const sql = `SELECT name, sourcelanguage 
+        const sql = `SELECT profile_id, name, sourcelanguage 
                      FROM profiletbl 
                      WHERE uid = ?`
         
@@ -82,7 +82,7 @@ router
             message : "프로필 조회에 실패하였습니다."
         });
     }
-})
+})  
 .patch("/:profileId", AuthMiddleWare, async(req, res) => { //프로필 정보 수정
     const {profileId} = req.params;
     const {name, sourceLanguage} = req.body;
