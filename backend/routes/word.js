@@ -27,7 +27,8 @@ router
 
         //등록 명사 조회
         const getSql = `SELECT word_id, source, target
-                      WHERE profile_id = ?`;
+                        FROM wordtbl 
+                        WHERE profile_id = ?`;
 
         const [word] = await pool.query(getSql, [profileId]);
 
@@ -93,6 +94,7 @@ router
     try{
         // 프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
+                            FROM profiletbl
                             WHERE profile_id = ? AND uid = ?`;
 
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
