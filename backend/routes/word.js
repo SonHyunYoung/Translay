@@ -48,6 +48,12 @@ router
     const {profileId} = req.params;
     const {source, target} = req.body;
 
+    if(!source || !target){
+        return res.status(400).json({
+            message : "필수 입력사항을 모두 입력해주세요."
+        });
+    }
+
     try{
         // 프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
