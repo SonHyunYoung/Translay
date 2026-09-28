@@ -44,7 +44,7 @@ router
         });
     }
 })  
-.post("/profileId", AuthMiddleWare, async(req, res) => { //고유명사 등록
+.post("/:profileId", AuthMiddleWare, async(req, res) => { //고유명사 등록
     //저장할 소스
     const {profileId} = req.params;
     const {source, target} = req.body;
