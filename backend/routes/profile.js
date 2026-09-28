@@ -48,7 +48,7 @@ router
         const createSql = `INSERT INTO profiletbl (uid, name, sourcelanguage)
                              VALUES (?, ?, ?)`;
 
-        await pool.query(createSql, [req.user.id, name, sourceLanguage || "ja"]);
+        await pool.query(createSql, [req.user.id, name, sourceLanguage]);
 
         return res.status(201).json({
             message : "프로필 생성 성공"
@@ -117,7 +117,7 @@ router
                         updated_at = NOW()
                     WHERE profile_id = ?`
 
-        await pool.query(sql, [name, sourceLanguage || "ja", profileId]);
+        await pool.query(sql, [name, sourceLanguage, profileId]);
 
         return res.status(200).json({
             message : "프로필 수정에 성공했습니다."
