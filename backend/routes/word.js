@@ -61,7 +61,7 @@ router
                             FROM profiletbl
                             WHERE profile_id = ? AND uid = ?`;
 
-        const [profile] = await pool.query(checkSql, [profiledId, req.user.id]);
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
 
         if(profile.length === 0){
             return res.status(403).json({
@@ -95,7 +95,7 @@ router
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                             WHERE profile_id = ? AND uid = ?`;
 
-        const [profile] = await pool.query(checkSql, [profiledId, req.user.id]);
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
 
         if(profile.length === 0){
             return res.status(403).json({
@@ -131,7 +131,7 @@ router
                             FROM profiletbl
                             WHERE profile_id = ? AND uid = ?`;
 
-        const [profile] = await pool.query(checkSql, [profiledId, req.user.id]);
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
 
         if(profile.length === 0){
             return res.status(403).json({
