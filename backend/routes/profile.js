@@ -87,6 +87,14 @@ router
     const {profileId} = req.params;
     const {name, sourceLanguage} = req.body;
     
+    const allowedLanguage = ["ja", "zn", "en"];
+
+    if(sourceLanguage && !allowedLanguage.includes(sourceLanguage)){
+        return res.status(400).json({
+            message : "지원하지 않는 언어입니다."
+        });
+    }
+
     try{
         //프로필 소유 검증
         const checkSql = `SELECT * 
@@ -95,11 +103,11 @@ router
 
         const [profile] = await pool.query(checkSql, [req.user.id, profileId]);
 
-        if(profile[0].length === 0){
+        if(profile.length === 0){
             return res.status(403).json({
                 message : "접근권한이 없는 사용자 입니다."
             });
-        }
+        }   
 
         //정보 수정
 
@@ -109,7 +117,7 @@ router
                         updated_at = NOW()
                     WHERE profile_id = ?`
 
-        await pool.query(sql, [name, sourceLanguage, profileId]);
+        await pool.query(sql, [name, sourceLanguage || "ja", profileId]);
 
         return res.status(200).json({
             message : "프로필 수정에 성공했습니다."
@@ -131,7 +139,7 @@ router
        const checkSql = `SELECT * FROM profiletbl WHERE uid = ? AND profile_id = ?`;
        const [profile] = await pool.query(checkSql, [req.user.id, profileId]);
 
-       if(profile[0].length === 0){
+       if(profile.length === 0){
         return res.status(403).json({
             message : "접근권한이 없는 사용자 입니다."
         });
