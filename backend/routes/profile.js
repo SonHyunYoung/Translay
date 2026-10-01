@@ -58,7 +58,7 @@ router
         console.error( `프로필 생성 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "프로필 생성 중 오류가 발생했습니다."
+            message : "프로필 생성을 실패했습니다."
         });
     }
 })
@@ -79,7 +79,7 @@ router
         console.error(`프로필 조회 중 에러 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "프로필 조회에 실패하였습니다."
+            message : "프로필 조회를 실패했습니다."
         });
     }
 })  
@@ -127,7 +127,7 @@ router
         console.error(`프로필 수정 중 에러 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "프로필 수정 중 오류 발생"
+            message : "프로필 수정을 실패했습니다."
         });
     }
 })
@@ -157,7 +157,7 @@ router
         console.error(`프로필 삭제 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "프로필 삭제 중 오류가 발생했습니다."
+            message : "프로필 삭제를 실패했습니다."
         });
     }
 });
