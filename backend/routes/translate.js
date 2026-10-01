@@ -66,7 +66,7 @@ router
         console.error(`번역 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message: "번역 중 오류가 발생했습니다."
+            message: "번역에 실패했습니다."
         });
     }
 });
