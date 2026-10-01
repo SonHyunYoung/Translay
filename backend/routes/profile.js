@@ -17,7 +17,7 @@ router
         });
     }
 
-    if(2 < name.length || name.length > 25){
+    if(2 < name.length || name.length > 25){ //프로필 이름 길이가 2자 미만 25자 초과인 경우
         res.status(400).json({
             message : "프로필 이름은 2자 이상 25자 이하까지만 입력가능합니다."
         });
@@ -93,13 +93,13 @@ router
     const {profileId} = req.params;
     const {name, sourceLanguage} = req.body;
     
-    if(!name){
+    if(!name){ //이름이 없는 경우
         return res.status(400).json({
             message : "필수사항을 모두 입력해주세요"
         });
     }
 
-    if(2 < name.length || name.length > 25){
+    if(2 < name.length || name.length > 25){ //이름 길이가 2글자 미만 25글자 초과인 경우
         return res.status(400).json({
             message : "프로필 이름은 2자 이상 25자 이하까지만 입력가능합니다."
         })
