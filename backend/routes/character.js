@@ -40,7 +40,7 @@ router
         console.error(`캐릭터 이름 조회 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : `캐릭터 이름 조회 중 오류가 발생했습니다.`
+            message : `캐릭터 이름 조회에 실패했습니다.`
         });
     }
 })
@@ -107,7 +107,7 @@ router
         console.error(`캐릭터 이름 등록 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "캐릭터 이름 등록 중 오류가 발생했습니다."
+            message : "캐릭터 이름 등록에 실패했습니다."
         });
     }
 })
@@ -149,7 +149,7 @@ router
         console.error(`캐릭터 정보 수정 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "캐릭터 정보 수정 중 오류가 발생했습니다."
+            message : "캐릭터 정보 수정에 실패했습니다."
         });
     }
 
@@ -184,7 +184,7 @@ router
         console.error(`캐릭터 정보 삭제 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "캐릭터 정보 삭제 중 오류가 발생했습니다."
+            message : "캐릭터 정보 삭제에 실패했습니다."
         });
     }
 });
@@ -216,7 +216,7 @@ router
         const [terms] = await pool.query(getSql, [characterId]);
 
         return res.status(200).json({
-            message : "호칭 종회에 성공했습니다.",
+            message : "호칭 조회에 성공했습니다.",
             terms
         });
 
@@ -224,7 +224,7 @@ router
         console.error(`호칭 조회 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "호칭 조회 중 오류가 발생했습니다."
+            message : "호칭 조회에 실패했습니다."
         });
     }
 })
@@ -278,7 +278,7 @@ router
         console.error(`호칭 등록 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "호칭 등록 중 오류가 발생했습니다."
+            message : "호칭 등록에 실패했습니다."
         });
     }
 })
@@ -315,7 +315,7 @@ router
         console.error(`호칭 수정 종 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "호칭 수정 중 오류가 발생했습니다."
+            message : "호칭 수정에 실패했습니다."
         });
     }
 })
@@ -351,7 +351,7 @@ router
         console.error(`호칭 삭제 중 오류 발생 : ${err}`);
 
         return res.status(500).json({
-            message : "호칭 삭제 중 오류가 발생했습니다."
+            message : "호칭 삭제에 실패했습니다."
         });
     }
 });
