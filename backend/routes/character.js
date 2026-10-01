@@ -69,7 +69,7 @@ router
             });
         }
 
-        //중복 체크(동명이인 어쩔껀데 씨비)
+        //중복 체크(동명이인)
         const dupliCheckSql = `SELECT profile_id, source_name 
                                 FROM charactertbl
                                 WHERE profile_id = ? AND source_name = ?`;
@@ -191,17 +191,169 @@ router
 
 //캐릭터 호칭 등록
 router
-.get("", AuthMiddleWare, async(req, res) => {
+.get("/:profileId/:characterId/term", AuthMiddleWare, async(req, res) => { //호칭 조회
+    const {profileId, characterId} = req.params;
+    
+    try{
+        //프로필 검증
+        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
+                                    FROM profiletbl
+                                    WHERE profile_id = ? AND uid = ?`;
+        
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
+        
+        if(profile.length === 0){
+            return res.status(403).json({
+                 message : "접근 권한이 없습니다."
+            });
+        }
 
+        //조회
+        const getSql = `SELECT term_id, source, target
+                        FROM charactertermtbl
+                        WHERE character_id = ?`;
+
+        const [terms] = await pool.query(getSql, [characterId]);
+
+        return res.status(200).json({
+            message : "호칭 종회에 성공했습니다.",
+            terms
+        });
+
+    } catch(err) {
+        console.error(`호칭 조회 중 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "호칭 조회 중 오류가 발생했습니다."
+        });
+    }
 })
-.post("", AuthMiddleWare, async(req, res) =>{
+.post("/:profileId/:characterId/term", AuthMiddleWare, async(req, res) =>{ //호칭 등록
+    const {profileId, characterId} = req.params;
+    const {source, target} = req.body;
 
+    if(!source || !target){
+        return res.status(400).json({
+            message : "필수사항을 모두 입력해주세요"
+        });
+    }
+
+    try{
+        //프로필 검증
+        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
+                                    FROM profiletbl
+                                    WHERE profile_id = ? AND uid = ?`;
+        
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
+        
+        if(profile.length === 0){
+            return res.status(403).json({
+                 message : "접근 권한이 없습니다."
+            });
+        }
+
+        //중복체크
+        const dupliCheckSql = `SELECT * FROM charactertermtbl 
+                                WHERE character_id = ? AND source = ?`;
+        
+        const [check] = await pool.query(dupliCheckSql, [characterId, source]);
+
+        if(check.length > 0) {
+            return res.status(400).json({
+                message : "동일한 호칭이 존재합니다."
+            });
+        }
+        
+        //삽입
+        const insertSql = `INSERT INTO charactertermtbl (character_id, source, target)
+                            VALUES (?, ?, ?)`;
+        
+        await pool.query(insertSql, [characterId, source, target]);
+
+        return res.status(201).json({
+            message : "호칭을 성공적으로 등록했습니다."
+        });
+
+    } catch (err) {
+        console.error(`호칭 등록 중 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "호칭 등록 중 오류가 발생했습니다."
+        });
+    }
 })
-.patch("", AuthMiddleWare, async(req, res) => {
+.patch("/:profileId/:characterId/terms/:termId", AuthMiddleWare, async(req, res) => { //호칭 수정
+    const {profileId, characterId, termId} = req.params;
+    const {source, target} = req.body;
 
+    try{
+        //프로필 검증
+        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
+                                    FROM profiletbl
+                                    WHERE profile_id = ? AND uid = ?`;
+        
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
+        
+        if(profile.length === 0){
+            return res.status(403).json({
+                 message : "접근 권한이 없습니다."
+            });
+        }
+
+        //수정
+        const updateSql = `UPDATE charactertermtbl
+                            SET source = ?, target = ?, updated_at = NOW()
+                            WHERE term_id = ? AND character_id = ?`;
+        
+        await pool.query(updateSql, [source, target, termId, characterId]);
+
+        return res.status(200).json({
+            message : "호칭을 성공적으로 수정했습니다."
+        });
+
+    } catch (err) {
+        console.error(`호칭 수정 종 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "호칭 수정 중 오류가 발생했습니다."
+        });
+    }
 })
-.delete("", AuthMiddleWare, async(req, res) => {
+.delete("/:profileId/:characterId/terms/:termId", AuthMiddleWare, async(req, res) => { //호칭 삭제
+    const {profileId, characterId, termId} = req.params;
+    
+    try{
+        //프로필 검증
+        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
+                                    FROM profiletbl
+                                    WHERE profile_id = ? AND uid = ?`;
+        
+        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
+        
+        if(profile.length === 0){
+            return res.status(403).json({
+                 message : "접근 권한이 없습니다."
+            });
+        }
 
+        //삭제
+        const deleteSql = `DELETE 
+                            FROM charactertermtbl
+                            WHERE term_id = ? AND character_id = ?
+                        `
+        await pool.query(deleteSql, [termId, characterId]);
+
+        return res.status(200).json({
+            message : "호칭을 성공적으로 삭제했습니다."
+        });
+
+    } catch (err) {
+        console.error(`호칭 삭제 중 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "호칭 삭제 중 오류가 발생했습니다."
+        });
+    }
 });
 
 module.exports = router;
