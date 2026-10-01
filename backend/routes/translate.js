@@ -32,7 +32,7 @@ router
         const [characters] = await pool.query(
             `SELECT c.character_id, c.source_name, c.target_name,
                 JSON_ARRAYAGG(
-                    JSON_OBJECT('source', ct.source, 'target', ct.target, 'description', ct.description)
+                    JSON_OBJECT('source', ct.source, 'target', ct.target)
                 ) as terms
              FROM charactertbl c
              LEFT JOIN charactertermtbl ct ON c.character_id = ct.character_id
