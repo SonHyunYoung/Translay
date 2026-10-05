@@ -139,7 +139,7 @@ router
                             SET source_name = ?, target_name = ?, updated_at = NOW()
                             WHERE character_id = ? AND profile_id = ?`;
 
-        await pool.query(updateSql, [profileId, characterId]);
+        await pool.query(updateSql, [source, target, characterId, profileId]);
 
         return res.status(200).json({
             message : "캐릭터 정보를 성공적으로 수정했습니다."
