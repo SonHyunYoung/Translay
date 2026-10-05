@@ -19,6 +19,11 @@ router
         });
     }
 
+    if(name.length < 2 || name.length > 15){ //이름이 길이를 초과했을 땐
+        return res.status(400).json({
+            message : "이름은 2자 이상 25자 이하까지만 입력가능합니다."
+        });
+    }
     //이메일 중복 체크
     const emailCheck = `SELECT * FROM usertbl WHERE email = ?`;
 
