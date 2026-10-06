@@ -19,7 +19,7 @@ router
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                             FROM profiletbl
                             WHERE profile_id = ? AND uid = ?
-                            ORDER_BY ${orderBy}`;
+                            ORDER BY ${orderBy}`;
 
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
 
