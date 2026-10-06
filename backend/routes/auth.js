@@ -5,10 +5,13 @@ const jwt = require("jsonwebtoken"); //jwt 모듈
 
 const router = express.Router(); //라우터 객체
 
-//회원가입 API
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; 
 //정규 표현식을 이용한 비밀번호 보안성 확인(8자 이상, 대문자, 소문자 1자 이상 포함, 특수문자 포함)
 
+//이름 조건 추가 (공백 불가, 특수기호 _, .만 허용)
+const NAME_REGEX = /^[a-zA-Z0-9가-힣_.]+$/;
+
+//회원가입 API
 router
 .post("/signUp", async(req, res) => {
     const {email, name, password} = req.body; //입력받은 인자들
@@ -23,6 +26,13 @@ router
         return res.status(400).json({
             message : "이름은 2자 이상 25자 이하까지만 입력가능합니다."
         });
+    }
+
+    if(!NAME_REGEX.test(name)){ //이름에 공백이나 특수기호가 포함된 경우
+        return res.status(400).json({
+            message : "이름에 공백 또는 _, .을 제외한 특수기호는 포함될 수 없습니다."
+        });
+
     }
     //이메일 중복 체크
     const emailCheck = `SELECT * FROM usertbl WHERE email = ?`;
