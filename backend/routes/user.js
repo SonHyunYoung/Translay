@@ -11,6 +11,9 @@ const bcrypt = require("bcrypt"); //암호화 모듈
 //비밀번호 보안검증
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; 
 
+//이름 검증
+const NAME_REGEX = /^[a-zA-Z0-9가-힣_.]+$/;
+
 router
 .get("/mypage", AuthMiddleWare, async(req, res) => {
     const uid = req.user.id;
@@ -51,6 +54,12 @@ router
             message : "닉네임은 2자 이상 15자 이하로 입력가능합니다."
         });
     }
+
+    if(!NAME_REGEX.test(name)){
+        return res.status(400).json({
+            message : "이름에 공백 또는 _, .을 제외한 특수기호는 포함될 수 없습니다."
+        });
+    }   
 
     try{
         const updateSql = `UPDATE usertbl
