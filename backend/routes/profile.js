@@ -72,7 +72,8 @@ router
     try{
         const sql = `SELECT profile_id, name, sourcelanguage 
                      FROM profiletbl 
-                     WHERE uid = ?`
+                     WHERE uid = ?
+                     ORDER BY created_at ASC`;
         
         const [profiles] = await pool.query(sql, [req.user.id]);
 
