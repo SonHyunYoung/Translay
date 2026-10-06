@@ -10,12 +10,16 @@ const router = express.Router();
 router
 .get("/:profileId", AuthMiddleWare, async(req, res) => { //등록한 고유 명사 조회
     const {profileId} = req.params;
+    const {sort} = req.query;
+
+    const orderBy = sort === 'name' ? 'target ASC' : 'created_at ASC'; //sql문 가져오기 등록순 혹은 가나다 순 
 
     try{
         // 프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                             FROM profiletbl
-                            WHERE profile_id = ? AND uid = ?`;
+                            WHERE profile_id = ? AND uid = ?
+                            ORDER_BY ${orderBy}`;
 
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
 
