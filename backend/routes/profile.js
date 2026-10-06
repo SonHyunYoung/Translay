@@ -7,7 +7,8 @@ const router = express.Router(); //라우터
 
 const AuthMiddleWare = require("../middleware/auth"); //인증 미들웨어
 
-const NAME_REGEX = /^[a-zA-Z0-9가-힣_.]+$/; //이름 규칙(공백 포함 불가, _, . 제외 특수기호 포함 불가)
+const PROFILE_NAME_REGEX = /^[a-zA-Z0-9가-힣_.\s]+$/ //이름 규칙(_, . 제외 특수기호 포함 불가)
+
 router
 .post("/", AuthMiddleWare, async(req, res) => { //프로필 생성
     const {name, sourceLanguage } = req.body;
@@ -24,7 +25,7 @@ router
         });
     }
 
-    if(!NAME_REGEX.test(name)){ //이름이 규칙 위해 했는 경우
+    if(!PROFILE_NAME_REGEX.test(name)){ //이름이 규칙 위해 했는 경우
         return res.status(400).json({
             message : "이름에 공백 또는 _, .을 제외한 특수기호는 포함될 수 없습니다."
         });
