@@ -7,6 +7,7 @@ const router = express.Router(); //라우터
 
 const AuthMiddleWare = require("../middleware/auth"); //인증 미들웨어
 
+const NAME_REGEX = /^[a-zA-Z0-9가-힣_.]+$/; //이름 규칙(공백 포함 불가, _, . 제외 특수기호 포함 불가)
 router
 .post("/", AuthMiddleWare, async(req, res) => { //프로필 생성
     const {name, sourceLanguage } = req.body;
@@ -20,6 +21,12 @@ router
     if(2 > name.length || name.length > 25){ //프로필 이름 길이가 2자 미만 25자 초과인 경우
         return res.status(400).json({
             message : "프로필 이름은 2자 이상 25자 이하까지만 입력가능합니다."
+        });
+    }
+
+    if(!NAME_REGEX.test(name)){ //이름이 규칙 위해 했는 경우
+        return res.status(400).json({
+            message : "이름에 공백 또는 _, .을 제외한 특수기호는 포함될 수 없습니다."
         });
     }
     
