@@ -9,12 +9,16 @@ const router = express.Router(); //라우터
 router
 .get("/:profileId", AuthMiddleWare, async(req, res) => {
     const {profileId} = req.params;
+    const {sort} = req.query;
 
+    //사용자가 선택한 조건에 따라 정렬
+    const orderBy = sort === "name" ? "target_name ASC" : "created_at ASC";
     try{
         //프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                                     FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
+                                    WHERE profile_id = ? AND uid = ?
+                                    ORDER BY ${orderBy}`;
         
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
         
@@ -59,7 +63,8 @@ router
         //프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                                     FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
+                                    WHERE profile_id = ? AND uid = ?
+                                    ORDER_BY ${orderBy}`;
         
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
         
@@ -193,12 +198,17 @@ router
 router
 .get("/:profileId/:characterId/term", AuthMiddleWare, async(req, res) => { //호칭 조회
     const {profileId, characterId} = req.params;
-    
+    const {sort} = req.query;
+
+    //사용자가 설정한 조건에 맞춰서 정렬
+    const orderBy = sort === 'name' ? 'target ASC' : 'created_at ASC';
+
     try{
         //프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                                     FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
+                                    WHERE profile_id = ? AND uid = ?
+                                    ORDER BY ${orderBy}`;
         
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
         
