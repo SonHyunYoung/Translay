@@ -2,8 +2,13 @@ const pool = require("../database/maria"); //데이터 베이스 연결 풀
 const express = require("express"); //express 모듈 
 const bcrypt = require("bcrypt"); //bcrypt 모듈
 const jwt = require("jsonwebtoken"); //jwt 모듈
+const crypto = require("crypto"); //보안 모듈
 
 const router = express.Router(); //라우터 객체
+
+const hashToken = (token) => { //토큰 암호화(sha-256이용)
+    crypto.createHash("sha256").update(token).digest("hex");
+}
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; 
 //정규 표현식을 이용한 비밀번호 보안성 확인(8자 이상, 대문자, 소문자 1자 이상 포함, 특수문자 포함)
@@ -133,20 +138,39 @@ router
             });
         }
 
-        //로그인 성공
-        const token = jwt.sign(
+        //로그인 성공 후 jwt 발급
+        const accessToken = jwt.sign(
             {id : userInfo[0].id, 
-            email : userInfo[0].email,
+            email : userInfo[0].email
             },
             process.env.JWT_SECRET,
+            {expiresIn : "12h",
+            jwtid : crypto.randomUUID()
+            }
+        );
+
+        //refresh token 구현
+        const refreshToken = jwt.sign(
+            {id : userInfo[0].id,
+            email : userInfo[0].email
+            },
+            process.env.JWT_REFRESH_SECRET,
             {expiresIn : "30d"}
         );
+
+        //refresh token hash 알고리즘 이용해 암호화 후 저장
+        const insertSql = `INSERT INTO refhesh_token (uid, token, expired_at)
+                            VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))`;
+
+        await pool.query(insertSql, [userInfo[0].id, hashToken(refreshToken)]);
 
         return res.status(200).json({
             user_id : userInfo.email,
             message : "로그인 성공",
-            token : token
+            accessToken,
+            refreshToken
         });
+
     } catch(err){
         console.log(`로그인 중 오류가 발생 : ${err}`);
 
@@ -156,10 +180,67 @@ router
     }
 
 })
+.post("/refresh", async(req, res) => {
+    const {refreshToken} = req.body;
+
+    if(!refreshToken){
+        return res.status(400).json({
+            message : "rehresh Token이 존재하지 않습니다."
+        });
+    }
+
+    try{
+        //서명, 만료 검증
+        const decode = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+        //받아온 토큰 해쉬해서 비교
+        const getSql = `SELECT id FROM rehrest_token 
+                        WHERE token_hash = ? AND expired_at > NOW()`;
+
+        const [saved] = await pool.query(getSql, [hashToken(refreshToken)]);
+
+        if(saved.length === 0) {
+            return res.status(400).json({
+                message : "유효하지 않은 토큰입니다."
+            });
+        }
+
+        const newAccessToken = jwt.sign(
+            {id : decode.id},
+            process.env.JWT_SECRET,
+            {expiresIn : "12h"}
+        );
+
+        return res.status(200).json({
+            message: "토큰 재발급 성공",
+            accessToken : newAccessToken
+        });
+
+    } catch(err) {
+        console.error(`rehresh token 서명 중 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "유효하지 않은 토큰입니다."
+        });
+    }
+})
 .post("/logout", async(req, res) => {
-    res.status(200).json({
+    try{   
+        const deleteSql = `DELETE FROM refresh_token
+                            WHERE uid = ?`;
+
+        await pool.query(deleteSql, [req.user.id]);
+
+        res.status(200).json({
         message : "로그아웃 성공"
     });
+    } catch (err) {
+        console.error(`로그아웃 중 오류 발생 : ${err}`);
+
+        return res.status(500).json({
+            message : "로그아웃에 실패했습니다."
+        });
+    }
 });
 
 module.exports = router;
