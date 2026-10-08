@@ -141,8 +141,8 @@ router
 
         //로그인 성공 후 jwt 발급
         const accessToken = jwt.sign(
-            {id : userInfo[0].id, 
-            email : userInfo[0].email
+            {id : user.id, 
+            email : user.email
             },
             process.env.JWT_SECRET,
             {expiresIn : "12h",
@@ -152,8 +152,8 @@ router
 
         //refresh token 구현
         const refreshToken = jwt.sign(
-            {id : userInfo[0].id,
-            email : userInfo[0].email
+            {id : user.id,
+            email : user.email
             },
             process.env.JWT_REFRESH_SECRET,
             {expiresIn : "30d",
@@ -168,7 +168,7 @@ router
         await pool.query(insertSql, [userInfo[0].id, hashToken(refreshToken)]);
 
         return res.status(200).json({
-            user_id : userInfo.email,
+            user_id : user.email,
             message : "로그인 성공",
             accessToken,
             refreshToken
