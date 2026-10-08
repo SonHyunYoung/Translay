@@ -6,9 +6,9 @@ const crypto = require("crypto"); //보안 모듈
 
 const router = express.Router(); //라우터 객체
 
-const hashToken = (token) => { //토큰 암호화(sha-256이용)
+const hashToken = (token) => //토큰 암호화(sha-256이용)
     crypto.createHash("sha256").update(token).digest("hex");
-}
+
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; 
 //정규 표현식을 이용한 비밀번호 보안성 확인(8자 이상, 대문자, 소문자 1자 이상 포함, 특수문자 포함)
@@ -159,7 +159,7 @@ router
         );
 
         //refresh token hash 알고리즘 이용해 암호화 후 저장
-        const insertSql = `INSERT INTO refhesh_token (uid, token, expired_at)
+        const insertSql = `INSERT INTO refresh_token (uid, token_hash, expired_at)
                             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))`;
 
         await pool.query(insertSql, [userInfo[0].id, hashToken(refreshToken)]);
@@ -194,7 +194,7 @@ router
         const decode = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
         //받아온 토큰 해쉬해서 비교
-        const getSql = `SELECT id FROM rehrest_token 
+        const getSql = `SELECT id FROM refresh_token 
                         WHERE token_hash = ? AND expired_at > NOW()`;
 
         const [saved] = await pool.query(getSql, [hashToken(refreshToken)]);
