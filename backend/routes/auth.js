@@ -156,7 +156,9 @@ router
             email : userInfo[0].email
             },
             process.env.JWT_REFRESH_SECRET,
-            {expiresIn : "30d"}
+            {expiresIn : "30d",
+            jwtid : crypto.randomUUID()
+            }
         );
 
         //refresh token hash 알고리즘 이용해 암호화 후 저장
