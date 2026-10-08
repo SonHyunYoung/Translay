@@ -203,16 +203,25 @@ router
         const [saved] = await pool.query(getSql, [hashToken(refreshToken)]);
 
         if(saved.length === 0) {
+            // 서명은 유효한데 DB에 없음 = 폐기된 토큰 재사용 → 해당 유저 토큰 전부 삭제
+            //TODO: Android Authenticator에서 refresh 요청 직렬화(@Synchronized) 필수
+            //동시에 2번 호출되면 두 번째가 재사용으로 판정되어 강제 로그아웃됨
+            
+            const deleteSql1 = `DELETE FROM refresh_token
+                                WHERE uid = ?`;
+
+            await pool.query(deleteSql1, [decode.id]);
+
             return res.status(401).json({
                 message : "유효하지 않은 토큰입니다."
             });
         }
 
         //로그인 전 refresh token 폐기 후 재발급
-        const deleteSql = `DELETE FROM refresh_token
+        const deleteSql2 = `DELETE FROM refresh_token
                             WHERE id = ?`;
 
-        await pool.query(deleteSql, [saved[0].id]);
+        await pool.query(deleteSql2, [saved[0].id]);
 
         const newRefreshToken = jwt.sign(
             {id : decode.id},
