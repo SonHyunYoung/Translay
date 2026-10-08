@@ -1,4 +1,5 @@
 const pool = require("../database/maria"); //데이터 베이스 연결 풀
+const AuthMiddleWare = require("../middleware/auth"); //로그인 인증 미들웨어
 const express = require("express"); //express 모듈 
 const bcrypt = require("bcrypt"); //bcrypt 모듈
 const jwt = require("jsonwebtoken"); //jwt 모듈
@@ -224,7 +225,7 @@ router
         });
     }
 })
-.post("/logout", async(req, res) => {
+.post("/logout", AuthMiddleWare, async(req, res) => {
     try{   
         const deleteSql = `DELETE FROM refresh_token
                             WHERE uid = ?`;
