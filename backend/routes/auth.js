@@ -233,7 +233,8 @@ router
 
         return res.status(200).json({
             message: "토큰 재발급 성공",
-            accessToken : newAccessToken
+            accessToken : newAccessToken,
+            refreshToken : newRefreshToken
         });
 
     } catch(err) {
