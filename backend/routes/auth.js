@@ -188,11 +188,11 @@ router
 
     if(!refreshToken){
         return res.status(400).json({
-            message : "rehresh Token이 존재하지 않습니다."
+            message : "refresh Token이 존재하지 않습니다."
         });
     }
 
-    try{
+    try{ //보안을 위해 rtr 구현
         //서명, 만료 검증
         const decode = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
@@ -208,6 +208,23 @@ router
             });
         }
 
+        //로그인 전 refresh token 폐기 후 재발급
+        const deleteSql = `DELETE FROM refresh_token
+                            WHERE id = ?`;
+
+        await pool.query(deleteSql, [saved[0].id]);
+
+        const newRefreshToken = jwt.sign(
+            {id : decode.id},
+            process.env.JWT_REFRESH_SECRET,
+            {expiresIn : "30d", jwtid : crypto.randomUUID()}
+        );
+
+        const insertSql = `INSERT INTO refresh_token (uid, token_hash, expired_at)
+                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))`
+
+        await pool.query(insertSql, [decode.id, hashToken(newRefreshToken)]);
+
         const newAccessToken = jwt.sign(
             {id : decode.id},
             process.env.JWT_SECRET,
@@ -220,7 +237,7 @@ router
         });
 
     } catch(err) {
-        console.error(`rehresh token 서명 중 오류 발생 : ${err}`);
+        console.error(`refresh token 서명 중 오류 발생 : ${err}`);
 
         // 토큰 문제(위조, 만료, 형식 오류) → 인증 실패
         if(err.name === "TokenExpiredError" || err.name === "JsonWebTokenError"){
