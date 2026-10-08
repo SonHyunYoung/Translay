@@ -203,7 +203,7 @@ router
         const [saved] = await pool.query(getSql, [hashToken(refreshToken)]);
 
         if(saved.length === 0) {
-            return res.status(400).json({
+            return res.status(401).json({
                 message : "유효하지 않은 토큰입니다."
             });
         }
@@ -222,9 +222,18 @@ router
     } catch(err) {
         console.error(`rehresh token 서명 중 오류 발생 : ${err}`);
 
-        return res.status(500).json({
-            message : "유효하지 않은 토큰입니다."
-        });
+        // 토큰 문제(위조, 만료, 형식 오류) → 인증 실패
+        if(err.name === "TokenExpiredError" || err.name === "JsonWebTokenError"){
+            return res.status(401).json({
+                message : "유효하지 않은 토큰입니다."
+            });
+        }
+
+        else{
+            return res.status(500).json({
+                message : "토큰 재발급에 실패했습니다."
+            });
+        }
     }
 })
 .post("/logout", AuthMiddleWare, async(req, res) => {
