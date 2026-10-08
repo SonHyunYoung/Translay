@@ -27,7 +27,7 @@ router
         });
     }
 
-    if(name.length < 2 || name.length > 15){ //이름이 길이를 초과했을 땐
+    if(name.length < 2 || name.length > 25){ //이름이 길이를 초과했을 땐
         return res.status(400).json({
             message : "이름은 2자 이상 25자 이하까지만 입력가능합니다."
         });
