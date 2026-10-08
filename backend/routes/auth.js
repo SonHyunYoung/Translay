@@ -165,7 +165,7 @@ router
         const insertSql = `INSERT INTO refresh_token (uid, token_hash, expired_at)
                             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))`;
 
-        await pool.query(insertSql, [userInfo[0].id, hashToken(refreshToken)]);
+        await pool.query(insertSql, [user.id, hashToken(refreshToken)]);
 
         return res.status(200).json({
             user_id : user.email,
