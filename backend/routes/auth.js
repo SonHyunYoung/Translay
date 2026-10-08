@@ -28,9 +28,9 @@ router
         });
     }
 
-    if(name.length < 2 || name.length > 25){ //이름이 길이를 초과했을 땐
+    if(name.length < 2 || name.length > 15){ //이름이 길이를 초과했을 땐
         return res.status(400).json({
-            message : "이름은 2자 이상 25자 이하까지만 입력가능합니다."
+            message : "이름은 2자 이상 15자 이하까지만 입력가능합니다."
         });
     }
 
@@ -108,7 +108,7 @@ router
 });
 
 
-//로그인 API (로그아웃은 프론트에서 토큰을 삭제하는 방식으로 구현 가능하기 때문에 api 구현 x)
+//로그인 API 
 router
 .post("/login", async(req, res) => {
     const {email, password} = req.body;
