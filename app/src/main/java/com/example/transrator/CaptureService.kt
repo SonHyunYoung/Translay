@@ -1,12 +1,16 @@
 package com.example.transrator
 
-//MLkit 일본어 OCR 사용
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 import android.app.Notification
@@ -17,16 +21,16 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
+import android.graphics.RectF
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Button
@@ -37,17 +41,33 @@ class CaptureService : Service() {
     private lateinit var windowManager: WindowManager
     private var captureButton: android.view.View? = null
 
-
-
-
-
-    // VirtualDisplay와 ImageReader를 멤버로 (한 번만 생성)
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
 
     private var screenWidth = 0
     private var screenHeight = 0
     private var screenDensity = 0
+
+    // 코루틴 스코프 (서비스 종료 시 cancel)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var captureJob: Job? = null
+
+    // OCR 클라이언트는 한 번만 생성
+    private val recognizer by lazy {
+        TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+    }
+
+    // 변화 감지기 (연속 2회 같으면 완성으로 판정)
+    private val detector = ChangeDetector(stableRequired = 2)
+
+    // 번역 요청 겹침 방지용 (가장 최신 요청의 결과만 반영)
+    private var requestId = 0
+
+    companion object {
+        // 대사 영역 (화면 비율: 좌, 상, 우, 하) → 나중에 유저 지정 영역으로 교체
+        val DIALOG_REGION = RectF(0f, 0.6f, 1f, 1f)
+        const val CAPTURE_INTERVAL_MS = 500L
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -73,19 +93,16 @@ class CaptureService : Service() {
 
             mediaProjection?.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() {
-                    android.util.Log.d("CAPTURE", "MediaProjection 중지됨")
+                    Log.d("CAPTURE", "MediaProjection 중지됨")
                 }
             }, null)
 
-            // VirtualDisplay를 여기서 딱 한 번 생성
             setupVirtualDisplay()
-
             showCaptureButton()
         }
         return START_NOT_STICKY
     }
 
-    // VirtualDisplay 한 번만 생성
     private fun setupVirtualDisplay() {
         imageReader = ImageReader.newInstance(
             screenWidth, screenHeight, PixelFormat.RGBA_8888, 2
@@ -101,28 +118,32 @@ class CaptureService : Service() {
     }
 
     private fun showCaptureButton() {
-        // 캡처 버튼 + 중지 버튼을 담을 레이아웃
         val layout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
         }
 
-        // 캡처 버튼
-        val captureBtn = Button(this).apply {
-            text = "캡처"
-            setOnClickListener { captureScreen() }
-        }
-
-        // 중지 버튼
-        val stopBtn = Button(this).apply {
-            text = "중지"
+        // 시작/정지 토글 버튼
+        val toggleBtn = Button(this).apply {
+            text = "시작"
             setOnClickListener {
-                stopSelf()  // 서비스 종료 → onDestroy에서 정리됨
+                if (captureJob?.isActive == true) {
+                    stopCaptureLoop()
+                    text = "시작"
+                } else {
+                    startCaptureLoop()
+                    text = "정지"
+                }
             }
         }
 
-        layout.addView(captureBtn)
+        val stopBtn = Button(this).apply {
+            text = "종료"
+            setOnClickListener { stopSelf() }
+        }
+
+        layout.addView(toggleBtn)
         layout.addView(stopBtn)
-        captureButton = layout  // 멤버 변수에 레이아웃 저장
+        captureButton = layout
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -136,66 +157,92 @@ class CaptureService : Service() {
         windowManager.addView(captureButton, params)
     }
 
-    // 이제 여기선 이미 만들어진 imageReader에서 이미지만 꺼냄
-    private fun captureScreen() {
-        android.util.Log.d("CAPTURE", "captureScreen 시작")
+    // ---------- 캡처 루프 ----------
+    private fun startCaptureLoop() {
+        if (captureJob?.isActive == true) return
+        Log.d("CAPTURE", "캡처 루프 시작")
 
-        val image = imageReader?.acquireLatestImage()
-        if (image != null) {
-            val planes = image.planes
-            val buffer = planes[0].buffer
-            val pixelStride = planes[0].pixelStride
-            val rowStride = planes[0].rowStride
-            val rowPadding = rowStride - pixelStride * screenWidth
+        captureJob = serviceScope.launch {
+            while (isActive) {
+                captureAndProcess()
+                delay(CAPTURE_INTERVAL_MS)
+            }
+        }
+    }
 
-            val bitmap = Bitmap.createBitmap(
+    private fun stopCaptureLoop() {
+        Log.d("CAPTURE", "캡처 루프 정지")
+        captureJob?.cancel()
+        captureJob = null
+    }
+
+    // 한 프레임: 캡처 → 크롭 → OCR
+    private fun captureAndProcess() {
+        val cropped = captureCropped() ?: return
+        runOcr(cropped)
+    }
+
+    // 최신 이미지를 꺼내 대사 영역만 크롭한 비트맵 반환
+    private fun captureCropped(): Bitmap? {
+        val image = imageReader?.acquireLatestImage() ?: return null
+
+        try {
+            val plane = image.planes[0]
+            val pixelStride = plane.pixelStride
+            val rowPadding = plane.rowStride - pixelStride * screenWidth
+
+            val full = Bitmap.createBitmap(
                 screenWidth + rowPadding / pixelStride,
                 screenHeight,
                 Bitmap.Config.ARGB_8888
             )
-            bitmap.copyPixelsFromBuffer(buffer)
+            full.copyPixelsFromBuffer(plane.buffer)
 
-            android.util.Log.d("CAPTURE", "캡처 성공! 크기: ${bitmap.width} x ${bitmap.height}")
-            CaptureResult.bitmap = bitmap
+            // 크롭은 패딩을 뺀 screenWidth 기준
+            val x = (screenWidth * DIALOG_REGION.left).toInt()
+            val y = (screenHeight * DIALOG_REGION.top).toInt()
+            val w = (screenWidth * (DIALOG_REGION.right - DIALOG_REGION.left)).toInt()
+            val h = (screenHeight * (DIALOG_REGION.bottom - DIALOG_REGION.top)).toInt()
 
+            val cropped = Bitmap.createBitmap(full, x, y, w, h)
+            full.recycle()   // 전체 비트맵은 바로 반환
+            return cropped
+        } finally {
             image.close()
-
-            //  OCR 실행
-            runOcr(bitmap)
         }
     }
 
-    // OCR 함수 추가
     private fun runOcr(bitmap: Bitmap) {
-        val recognizer = TextRecognition.getClient(
-            JapaneseTextRecognizerOptions.Builder().build()
-        )
-
         val inputImage = InputImage.fromBitmap(bitmap, 0)
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
-                android.util.Log.d("OCR", "===== 인식 결과 =====")
-                android.util.Log.d("OCR", visionText.text)
-                android.util.Log.d("OCR", "====================")
+                val text = visionText.text
+                Log.d("OCR", "인식: ${text.replace("\n", " / ")}")
+                CaptureResult.ocrText = text
 
-                CaptureResult.ocrText = visionText.text
-
-                // ↓ 여기 추가
-                if (visionText.text.isNotEmpty()) {
-                    requestTranslate(visionText.text)
+                // 변화 감지: 완성된 문장일 때만 번역 요청
+                val toTranslate = detector.onOcr(text)
+                if (toTranslate != null) {
+                    Log.d("DETECT", "완성 감지 → 번역 요청: $toTranslate")
+                    requestTranslate(toTranslate)
                 }
             }
             .addOnFailureListener { e ->
-                android.util.Log.e("OCR", "OCR 실패: $e")
+                Log.e("OCR", "OCR 실패: $e")
+            }
+            .addOnCompleteListener {
+                bitmap.recycle()   // 성공/실패 상관없이 OCR이 끝난 뒤 반환
             }
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzg5OTI4NzIwLCJleHAiOjE3OTI1MjA3MjB9.hYEI_XRAaWGa5akCSdpRCZmeV4VQlyIiP15fc-cSqqU"  // 테스트용
+        val token = "Bearer 여기에_테스트_토큰"   // TODO: 로컬에서만 채우고 커밋 전 비우기
         val profileId = 1  // 테스트용 프로필 ID
 
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        val myRequestId = ++requestId
+
+        serviceScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.api.translate(
                     token = token,
@@ -205,11 +252,17 @@ class CaptureService : Service() {
                     )
                 )
 
-                android.util.Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
+                // 내가 보낸 뒤에 더 최신 요청이 나갔으면 이 결과는 버림
+                if (myRequestId != requestId) {
+                    Log.d("TRANSLATE", "오래된 요청 결과 무시: ${response.translatedText}")
+                    return@launch
+                }
+
+                Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
                 CaptureResult.translatedText = response.translatedText
 
             } catch (e: Exception) {
-                android.util.Log.e("TRANSLATE", "번역 실패: $e")
+                Log.e("TRANSLATE", "번역 실패: $e")
             }
         }
     }
@@ -242,10 +295,12 @@ class CaptureService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
         captureButton?.let { windowManager.removeView(it) }
         virtualDisplay?.release()
         imageReader?.close()
         mediaProjection?.stop()
+        recognizer.close()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -254,6 +309,5 @@ class CaptureService : Service() {
 object CaptureResult {
     var bitmap: Bitmap? = null
     var ocrText: String? = null
-
     var translatedText: String? = null
 }
