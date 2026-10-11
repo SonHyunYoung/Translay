@@ -64,8 +64,9 @@ class CaptureService : Service() {
     private var requestId = 0
 
     companion object {
-        // 대사 영역 (화면 비율: 좌, 상, 우, 하) → 나중에 유저 지정 영역으로 교체
-        val DIALOG_REGION = RectF(0f, 0.6f, 1f, 1f)
+        // 임시: 전체 화면으로 테스트. 나중에 대사창 영역으로 좁힐 것
+        // 이름표 제외, 본문 텍스트만 크롭
+        val DIALOG_REGION = RectF(0f, 0.54f, 1f, 0.62f)   // 예시, 실제 이미지 보고 조정
         const val CAPTURE_INTERVAL_MS = 500L
     }
 
@@ -179,6 +180,7 @@ class CaptureService : Service() {
     // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
         val cropped = captureCropped() ?: return
+        saveBitmapForDebug(cropped, "debug_crop.png")
         runOcr(cropped)
     }
 
@@ -198,17 +200,32 @@ class CaptureService : Service() {
             )
             full.copyPixelsFromBuffer(plane.buffer)
 
-            // 크롭은 패딩을 뺀 screenWidth 기준
+            Log.d("CAPTURE_SIZE", "full: ${full.width} x ${full.height}, screenWidth=$screenWidth, screenHeight=$screenHeight")
+            // 디버그: 전체 화면도 저장
+            saveBitmapForDebug(full, "debug_full.png")
+
             val x = (screenWidth * DIALOG_REGION.left).toInt()
             val y = (screenHeight * DIALOG_REGION.top).toInt()
             val w = (screenWidth * (DIALOG_REGION.right - DIALOG_REGION.left)).toInt()
             val h = (screenHeight * (DIALOG_REGION.bottom - DIALOG_REGION.top)).toInt()
 
             val cropped = Bitmap.createBitmap(full, x, y, w, h)
-            full.recycle()   // 전체 비트맵은 바로 반환
+            full.recycle()
             return cropped
         } finally {
             image.close()
+        }
+    }
+
+    private fun saveBitmapForDebug(bitmap: Bitmap, fileName: String = "debug_crop.png") {
+        try {
+            val file = java.io.File(getExternalFilesDir(null), fileName)
+            java.io.FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            Log.d("DEBUG_CROP", "저장됨: ${file.absolutePath}")
+        } catch (e: Exception) {
+            Log.e("DEBUG_CROP", "저장 실패: $e")
         }
     }
 
@@ -237,10 +254,11 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer 여기에_테스트_토큰"   // TODO: 로컬에서만 채우고 커밋 전 비우기
-        val profileId = 1  // 테스트용 프로필 ID
+        val token = "Bearer jwttoken"   // TODO: 로컬에서만 채우고 커밋 전 비우기
+        val profileId = 3  // 테스트용 프로필 ID
 
         val myRequestId = ++requestId
+        val startTime = System.currentTimeMillis()   // 추가
 
         serviceScope.launch(Dispatchers.IO) {
             try {
@@ -252,17 +270,19 @@ class CaptureService : Service() {
                     )
                 )
 
-                // 내가 보낸 뒤에 더 최신 요청이 나갔으면 이 결과는 버림
+                val elapsed = System.currentTimeMillis() - startTime   // 추가
+
                 if (myRequestId != requestId) {
-                    Log.d("TRANSLATE", "오래된 요청 결과 무시: ${response.translatedText}")
+                    Log.d("TRANSLATE", "오래된 요청 결과 무시 (${elapsed}ms): ${response.translatedText}")
                     return@launch
                 }
 
-                Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
+                Log.d("TRANSLATE", "번역 결과 (${elapsed}ms): ${response.translatedText}")
                 CaptureResult.translatedText = response.translatedText
 
             } catch (e: Exception) {
-                Log.e("TRANSLATE", "번역 실패: $e")
+                val elapsed = System.currentTimeMillis() - startTime   // 추가
+                Log.e("TRANSLATE", "번역 실패 (${elapsed}ms): $e")
             }
         }
     }
