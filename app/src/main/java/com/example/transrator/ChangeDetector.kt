@@ -5,7 +5,7 @@ class ChangeDetector(
 ) {
     private var candidate = ""        // 안정화 대기 중인 텍스트
     private var stableCount = 0
-    private var lastConfirmed = ""    // 마지막으로 확정(번역)한 텍스트
+    private var lastConfirmed = ""    // 마지막으로 확정(번역 요청)한 텍스트
 
     /**
      * OCR 원문을 받아서, 번역해야 할 때만 원문을 돌려준다.
@@ -20,7 +20,7 @@ class ChangeDetector(
             return null
         }
 
-        // 이미 번역한 문장이면 생략
+        // 이미 번역 요청한 문장이면 생략
         if (text == lastConfirmed) return null
 
         // 안정화 판정
