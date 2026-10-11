@@ -180,7 +180,7 @@ class CaptureService : Service() {
     // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
         val cropped = captureCropped() ?: return
-        saveBitmapForDebug(cropped, "debug_crop.png")
+        //saveBitmapForDebug(cropped, "debug_crop.png")
         runOcr(cropped)
     }
 
@@ -202,7 +202,7 @@ class CaptureService : Service() {
 
             Log.d("CAPTURE_SIZE", "full: ${full.width} x ${full.height}, screenWidth=$screenWidth, screenHeight=$screenHeight")
             // 디버그: 전체 화면도 저장
-            saveBitmapForDebug(full, "debug_full.png")
+            //saveBitmapForDebug(full, "debug_full.png")
 
             val x = (screenWidth * DIALOG_REGION.left).toInt()
             val y = (screenHeight * DIALOG_REGION.top).toInt()
