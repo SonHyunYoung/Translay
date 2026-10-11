@@ -276,7 +276,7 @@ class CaptureService : Service() {
                 }
 
                 Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
-                CaptureResult.translatedText = response.translatedText
+                CaptureResult.translatedText.value = response.translatedText ?: ""
 
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
