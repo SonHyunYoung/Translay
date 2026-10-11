@@ -34,6 +34,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Button
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class CaptureService : Service() {
 
