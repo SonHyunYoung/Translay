@@ -93,6 +93,7 @@ class OverlayService : Service() {
     private fun hideOverlay() {
         hiddenByUser = true
         overlayView?.visibility = View.GONE
+        CaptureResult.resumeSignal.value = CaptureResult.resumeSignal.value + 1   // OCR 재개 신호
     }
 
     override fun onDestroy() {
