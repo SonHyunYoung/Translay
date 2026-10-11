@@ -254,11 +254,10 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer jwttoken"   // TODO: 로컬에서만 채우고 커밋 전 비우기
+        val token = "Bearer "   // TODO: 로컬에서만 채우고 커밋 전 비우기
         val profileId = 3  // 테스트용 프로필 ID
 
         val myRequestId = ++requestId
-        val startTime = System.currentTimeMillis()   // 추가
 
         serviceScope.launch(Dispatchers.IO) {
             try {
@@ -270,19 +269,17 @@ class CaptureService : Service() {
                     )
                 )
 
-                val elapsed = System.currentTimeMillis() - startTime   // 추가
-
+                // 내가 보낸 뒤에 더 최신 요청이 나갔으면 이 결과는 버림
                 if (myRequestId != requestId) {
-                    Log.d("TRANSLATE", "오래된 요청 결과 무시 (${elapsed}ms): ${response.translatedText}")
+                    Log.d("TRANSLATE", "오래된 요청 결과 무시: ${response.translatedText}")
                     return@launch
                 }
 
-                Log.d("TRANSLATE", "번역 결과 (${elapsed}ms): ${response.translatedText}")
+                Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
                 CaptureResult.translatedText = response.translatedText
 
             } catch (e: Exception) {
-                val elapsed = System.currentTimeMillis() - startTime   // 추가
-                Log.e("TRANSLATE", "번역 실패 (${elapsed}ms): $e")
+                Log.e("TRANSLATE", "번역 실패: $e")
             }
         }
     }
