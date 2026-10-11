@@ -17,8 +17,7 @@ router
         //프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                                     FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?
-                                    ORDER BY ${orderBy}`;
+                                    WHERE profile_id = ? AND uid = ?`;
         
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
         
@@ -31,7 +30,8 @@ router
         //조회 sql
         const getSql = `SELECT character_id, source_name, target_name
                         FROM charactertbl
-                        WHERE profile_id = ?`;
+                        WHERE profile_id = ?
+                        ORDER BY ${orderBy}`;
 
         const [character] = await pool.query(getSql, [profileId]);
 
@@ -63,8 +63,7 @@ router
         //프로필 검증
         const checkSql = `SELECT profile_id, uid, name, sourcelanguage
                                     FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?
-                                    ORDER_BY ${orderBy}`;
+                                    WHERE profile_id = ? AND uid = ?`;
         
         const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
         
