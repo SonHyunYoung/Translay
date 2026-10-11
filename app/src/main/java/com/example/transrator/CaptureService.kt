@@ -35,6 +35,7 @@ import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Button
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 
 class CaptureService : Service() {
 
@@ -268,22 +269,17 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzkxNzMxODQzLCJleHAiOjE3OTE3NzUwNDMsImp0aSI6IjBhNzEzNGY1LWMwNDgtNDMzOC1hMzY1LWQyZjhkNjYzNDMwMyJ9.98ua4EjNGWZDE88IXiOq5LIWh4MuW8ZhHEYTKfVxSDI"   // TODO: 로컬에서만 채우고 커밋 전 비우기
-        val profileId = 3  // 테스트용 프로필 ID
-
+        val token = "Bearer ..."
+        val profileId = 3
         val myRequestId = ++requestId
 
         serviceScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.api.translate(
                     token = token,
-                    request = TranslateRequest(
-                        profileId = profileId,
-                        text = text
-                    )
+                    request = TranslateRequest(profileId = profileId, text = text)
                 )
 
-                // 내가 보낸 뒤에 더 최신 요청이 나갔으면 이 결과는 버림
                 if (myRequestId != requestId) {
                     Log.d("TRANSLATE", "오래된 요청 결과 무시: ${response.translatedText}")
                     return@launch
@@ -294,6 +290,7 @@ class CaptureService : Service() {
 
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
+                ocrPaused = false   // 실패하면 바로 재개 (안 그러면 영원히 멈춤)
             }
         }
     }
