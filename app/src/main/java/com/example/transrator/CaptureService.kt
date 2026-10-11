@@ -187,12 +187,6 @@ class CaptureService : Service() {
         }
     }
 
-    private fun stopCaptureLoop() {
-        Log.d("CAPTURE", "캡처 루프 정지")
-        captureJob?.cancel()
-        captureJob = null
-    }
-
     // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
         if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 자체를 생략
@@ -291,9 +285,19 @@ class CaptureService : Service() {
             }
         }
     }
+    private fun stopCaptureLoop() {
+        Log.d("CAPTURE", "캡처 루프 정지")
+        captureJob?.cancel()
+        captureJob = null
 
+        // 세션 종료 시 캐시 정리
+        serviceScope.launch(Dispatchers.IO) {
+            db.translationCacheDao().clearByProfile(profileId = 3)
+            Log.d("CACHE", "캐시 정리됨 (세션 종료)")
+        }
+    }
     private fun requestTranslate(text: String, profileId: Int) {
-        val token = "Bearer ..."   // 기존 토큰 그대로
+        val token = "Bearer "   // 기존 토큰 그대로
         val myRequestId = ++requestId
 
         serviceScope.launch(Dispatchers.IO) {
