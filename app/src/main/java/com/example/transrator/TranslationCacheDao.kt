@@ -16,5 +16,9 @@ interface TranslationCacheDao {
         WHERE profileId = :profileId AND sourceText = :sourceText
         LIMIT 1
     """)
+
     suspend fun findBySourceText(profileId: Int, sourceText: String): TranslationCacheEntity?
+
+    @Query("DELETE FROM translation_cache WHERE profileId = :profileId")
+    suspend fun clearByProfile(profileId: Int)
 }
