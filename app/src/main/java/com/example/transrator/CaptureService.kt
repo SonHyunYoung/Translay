@@ -49,6 +49,8 @@ class CaptureService : Service() {
     private var screenHeight = 0
     private var screenDensity = 0
 
+    private var ocrPaused = false //ocr 정지 여부
+
     // 코루틴 스코프 (서비스 종료 시 cancel)
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var captureJob: Job? = null
@@ -82,6 +84,16 @@ class CaptureService : Service() {
         screenWidth = metrics.widthPixels
         screenHeight = metrics.heightPixels
         screenDensity = metrics.densityDpi
+
+        serviceScope.launch {
+            CaptureResult.resumeSignal.collectLatest {
+                if (it > 0) {   // 초기값(0) 무시
+                    ocrPaused = false
+                    Log.d("CAPTURE", "유저 탭 감지 → OCR 재개")
+                }
+            }
+        }
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -180,8 +192,9 @@ class CaptureService : Service() {
 
     // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
+        if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 자체를 생략
+
         val cropped = captureCropped() ?: return
-        //saveBitmapForDebug(cropped, "debug_crop.png")
         runOcr(cropped)
     }
 
@@ -239,11 +252,11 @@ class CaptureService : Service() {
                 Log.d("OCR", "인식: ${text.replace("\n", " / ")}")
                 CaptureResult.ocrText = text
 
-                // 변화 감지: 완성된 문장일 때만 번역 요청
                 val toTranslate = detector.onOcr(text)
                 if (toTranslate != null) {
                     Log.d("DETECT", "완성 감지 → 번역 요청: $toTranslate")
                     requestTranslate(toTranslate)
+                    ocrPaused = true   // 번역 요청 나간 순간부터 OCR 멈춤
                 }
             }
             .addOnFailureListener { e ->
@@ -255,7 +268,7 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "Bearer "   // TODO: 로컬에서만 채우고 커밋 전 비우기
+        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzkxNzMxODQzLCJleHAiOjE3OTE3NzUwNDMsImp0aSI6IjBhNzEzNGY1LWMwNDgtNDMzOC1hMzY1LWQyZjhkNjYzNDMwMyJ9.98ua4EjNGWZDE88IXiOq5LIWh4MuW8ZhHEYTKfVxSDI"   // TODO: 로컬에서만 채우고 커밋 전 비우기
         val profileId = 3  // 테스트용 프로필 ID
 
         val myRequestId = ++requestId
@@ -328,4 +341,7 @@ object CaptureResult {
     var bitmap: Bitmap? = null
     var ocrText: String? = null
     val translatedText = MutableStateFlow("")
+
+    // OverlayService → CaptureService로 "탭했다" 알리는 신호
+    val resumeSignal = MutableStateFlow(0)   // 값이 바뀔 때마다 재개 트리거
 }
