@@ -1,7 +1,5 @@
 package com.example.transrator
 
-package com.example.transrator
-
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
