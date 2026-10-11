@@ -326,5 +326,5 @@ class CaptureService : Service() {
 object CaptureResult {
     var bitmap: Bitmap? = null
     var ocrText: String? = null
-    var translatedText: String? = null
+    val translatedText = MutableStateFlow("")
 }
