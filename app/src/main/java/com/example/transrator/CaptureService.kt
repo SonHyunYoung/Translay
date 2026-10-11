@@ -192,7 +192,7 @@ class CaptureService : Service() {
     }
 
     private fun requestTranslate(text: String) {
-        val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzg5OTI4NzIwLCJleHAiOjE3OTI1MjA3MjB9.hYEI_XRAaWGa5akCSdpRCZmeV4VQlyIiP15fc-cSqqU"  // 테스트용
+        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzg5OTI4NzIwLCJleHAiOjE3OTI1MjA3MjB9.hYEI_XRAaWGa5akCSdpRCZmeV4VQlyIiP15fc-cSqqU"  // 테스트용
         val profileId = 1  // 테스트용 프로필 ID
 
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
