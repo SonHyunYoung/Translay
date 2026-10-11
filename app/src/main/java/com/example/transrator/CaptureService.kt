@@ -52,6 +52,8 @@ class CaptureService : Service() {
 
     private var ocrPaused = false //ocr 정지 여부
 
+    private val db by lazy { AppDatabase.getInstance(applicationContext) }
+
     // 코루틴 스코프 (서비스 종료 시 cancel)
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var captureJob: Job? = null
@@ -196,6 +198,7 @@ class CaptureService : Service() {
         if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 자체를 생략
 
         val cropped = captureCropped() ?: return
+        //saveBitmapForDebug(cropped, "debug_crop.png")
         runOcr(cropped)
     }
 
@@ -245,7 +248,11 @@ class CaptureService : Service() {
     }
 
     private fun runOcr(bitmap: Bitmap) {
-        val inputImage = InputImage.fromBitmap(bitmap, 0)
+        val scaled = Bitmap.createScaledBitmap(
+            bitmap, bitmap.width * 2, bitmap.height * 2, true
+        )
+
+        val inputImage = InputImage.fromBitmap(scaled, 0)
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
@@ -255,22 +262,38 @@ class CaptureService : Service() {
 
                 val toTranslate = detector.onOcr(text)
                 if (toTranslate != null) {
-                    Log.d("DETECT", "완성 감지 → 번역 요청: $toTranslate")
-                    requestTranslate(toTranslate)
-                    ocrPaused = true   // 번역 요청 나간 순간부터 OCR 멈춤
+                    Log.d("DETECT", "완성 감지: $toTranslate")
+                    handleConfirmedText(toTranslate)
+                    ocrPaused = true
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("OCR", "OCR 실패: $e")
             }
             .addOnCompleteListener {
-                bitmap.recycle()   // 성공/실패 상관없이 OCR이 끝난 뒤 반환
+                bitmap.recycle()
+                scaled.recycle()   // 확대본도 recycle
             }
     }
 
-    private fun requestTranslate(text: String) {
-        val token = "Bearer ..."
+    private fun handleConfirmedText(text: String) {
         val profileId = 3
+
+        serviceScope.launch(Dispatchers.IO) {
+            val cached = db.translationCacheDao().findBySourceText(profileId, text)
+
+            if (cached != null) {
+                Log.d("CACHE", "캐시 히트 → 즉시 표시: ${cached.translatedText}")
+                CaptureResult.translatedText.value = cached.translatedText
+            } else {
+                Log.d("CACHE", "캐시 미스 → 서버 요청")
+                requestTranslate(text, profileId)
+            }
+        }
+    }
+
+    private fun requestTranslate(text: String, profileId: Int) {
+        val token = "Bearer ..."   // 기존 토큰 그대로
         val myRequestId = ++requestId
 
         serviceScope.launch(Dispatchers.IO) {
@@ -285,12 +308,21 @@ class CaptureService : Service() {
                     return@launch
                 }
 
-                Log.d("TRANSLATE", "번역 결과: ${response.translatedText}")
-                CaptureResult.translatedText.value = response.translatedText ?: ""
+                val translated = response.translatedText ?: ""
+                Log.d("TRANSLATE", "번역 결과: $translated")
+                CaptureResult.translatedText.value = translated
+
+                db.translationCacheDao().insert(
+                    TranslationCacheEntity(
+                        profileId = profileId,
+                        sourceText = text,
+                        translatedText = translated
+                    )
+                )
 
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
-                ocrPaused = false   // 실패하면 바로 재개 (안 그러면 영원히 멈춤)
+                ocrPaused = false
             }
         }
     }
