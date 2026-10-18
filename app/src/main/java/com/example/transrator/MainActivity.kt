@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.example.transrator.capture.CaptureActivity
+import com.example.transrator.capture.OverlayService
 import com.example.transrator.ui.theme.TransratorTheme
 
 class MainActivity : ComponentActivity() {

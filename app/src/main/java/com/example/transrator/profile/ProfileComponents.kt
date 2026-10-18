@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.transrator.auth.Logo
+import com.example.transrator.auth.accentColor
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 

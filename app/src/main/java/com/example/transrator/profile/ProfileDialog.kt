@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -123,4 +123,9 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
             dismissButton = { TextButton(onClick = vm::cancelDelete) { Text("취소", fontFamily = Pretendard) } }
         )
     }
+}
+
+@Composable
+fun Logo(x0: Int) {
+    TODO("Not yet implemented")
 }

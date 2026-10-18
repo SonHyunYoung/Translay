@@ -1,5 +1,7 @@
-package com.example.transrator
+package com.example.transrator.auth
 
+import com.example.transrator.data.remote.RetrofitClient
+import com.example.transrator.data.TokenManager
 import com.google.gson.Gson
 import retrofit2.HttpException
 

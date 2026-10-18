@@ -1,7 +1,5 @@
-package com.example.transrator
+package com.example.transrator.capture
 
-import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.media.projection.MediaProjectionManager
@@ -28,7 +26,7 @@ class CaptureActivity : ComponentActivity() {
     private val projectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+        if (result.resultCode == RESULT_OK && result.data != null) {
             val intent = Intent(this, CaptureService::class.java).apply {
                 putExtra("resultCode", result.resultCode)
                 putExtra("data", result.data)
@@ -39,7 +37,7 @@ class CaptureActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        projectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
         setContent {
             TransratorTheme {

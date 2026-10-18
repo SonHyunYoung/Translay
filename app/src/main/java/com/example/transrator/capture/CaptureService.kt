@@ -1,5 +1,6 @@
-package com.example.transrator
+package com.example.transrator.capture
 
+import android.R
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
@@ -19,8 +20,8 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.graphics.RectF
@@ -34,14 +35,21 @@ import android.os.IBinder
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.LinearLayout
+import com.example.transrator.data.local.AppDatabase
+import com.example.transrator.data.remote.RetrofitClient
+import com.example.transrator.data.TokenManager
+import com.example.transrator.data.remote.TranslateRequest
+import com.example.transrator.data.local.TranslationCacheEntity
 
 class CaptureService : Service() {
 
     private var mediaProjection: MediaProjection? = null
     private lateinit var windowManager: WindowManager
-    private var captureButton: android.view.View? = null
+    private var captureButton: View? = null
 
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
@@ -79,7 +87,7 @@ class CaptureService : Service() {
         super.onCreate()
         startForegroundNotification()
 
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getRealMetrics(metrics)
@@ -107,7 +115,7 @@ class CaptureService : Service() {
 
         if (data != null) {
             val projectionManager =
-                getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             mediaProjection = projectionManager.getMediaProjection(resultCode, data)
 
             mediaProjection?.registerCallback(object : MediaProjection.Callback() {
@@ -137,8 +145,8 @@ class CaptureService : Service() {
     }
 
     private fun showCaptureButton() {
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
         }
 
         val toggleBtn = Button(this).apply {
@@ -342,13 +350,13 @@ class CaptureService : Service() {
         val notification: Notification = Notification.Builder(this, channelId)
             .setContentTitle("화면 캡처 중")
             .setContentText("게임 화면을 캡처하고 있습니다")
-            .setSmallIcon(android.R.drawable.ic_menu_camera)
+            .setSmallIcon(R.drawable.ic_menu_camera)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
                 1, notification,
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             )
         } else {
             startForeground(1, notification)

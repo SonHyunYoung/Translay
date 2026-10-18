@@ -1,6 +1,5 @@
-package com.example.transrator
+package com.example.transrator.auth
 
-import android.R
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

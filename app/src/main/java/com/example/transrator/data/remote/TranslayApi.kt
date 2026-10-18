@@ -1,5 +1,11 @@
-package com.example.transrator
+package com.example.transrator.data.remote
 
+import com.example.transrator.auth.LoginRequest
+import com.example.transrator.auth.LoginResponse
+import com.example.transrator.auth.MessageResponse
+import com.example.transrator.auth.SignUpRequest
+import com.example.transrator.profile.ProfileListResponse
+import com.example.transrator.profile.ProfileRequest
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST

@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.data.remote
 
 data class TranslateRequest(
     val profileId: Int,

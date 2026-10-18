@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.auth
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*

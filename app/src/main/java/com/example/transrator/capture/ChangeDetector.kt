@@ -1,4 +1,6 @@
-package com.example.transrator
+package com.example.transrator.capture
+
+import kotlin.math.abs
 
 class ChangeDetector(
     private val stableRequired: Int = 2,
@@ -36,7 +38,7 @@ class ChangeDetector(
     private fun isSimilar(a: String, b: String): Boolean {
         if (a.isEmpty() || b.isEmpty()) return a == b
         // 길이가 많이 다르면 바로 다른 문장으로 판단 (성능 최적화)
-        if (kotlin.math.abs(a.length - b.length) > similarityThreshold) return false
+        if (abs(a.length - b.length) > similarityThreshold) return false
         return levenshtein(a, b) <= similarityThreshold
     }
 

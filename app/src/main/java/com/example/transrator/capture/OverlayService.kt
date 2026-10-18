@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.capture
 
 import android.app.Service
 import android.content.Intent

@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert

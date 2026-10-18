@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.profile
 
 data class Profile(
     val profile_id: Int,

@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.data
 
 import android.content.Context
 

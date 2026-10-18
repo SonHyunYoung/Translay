@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.data.remote
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // 실기기면 본인 PC IP로 변경
-    private const val BASE_URL = "http://ip_address:3000/"
+    private const val BASE_URL = "http://192.168.0.45:3000/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

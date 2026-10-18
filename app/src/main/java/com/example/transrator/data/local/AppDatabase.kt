@@ -1,4 +1,4 @@
-package com.example.transrator
+package com.example.transrator.data.local
 
 import android.content.Context
 import androidx.room.Database
