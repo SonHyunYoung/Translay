@@ -40,4 +40,18 @@ class AuthRepository(private val tokens: TokenManager) {
         Gson().fromJson(response()?.errorBody()?.string(), MessageResponse::class.java)
             ?.message ?: "요청에 실패했습니다."
     } catch (e: Exception) { "요청에 실패했습니다." }
+
+    /** true = 로그인 유지 가능(토큰 갱신 성공), false = 다시 로그인 필요, null = 서버 연결 실패 */
+    suspend fun tryRefresh(): Boolean? {
+        val refresh = tokens.refreshToken() ?: return false
+        return try {
+            val res = api.refresh(RefreshRequest(refresh))
+            tokens.save(res.accessToken, res.refreshToken ?: refresh)
+            true
+        } catch (e: HttpException) {
+            if (e.code() == 401) { tokens.clear(); false } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
