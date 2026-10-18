@@ -1,0 +1,126 @@
+package com.example.transrator
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.example.transrator.ui.theme.BrandBlue
+import com.example.transrator.ui.theme.Pretendard
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
+    val isEdit = s.editing != null
+
+    Dialog(onDismissRequest = { if (!s.saving) vm.closeDialog() }) {
+        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Logo(28)
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(Modifier.fillMaxWidth())
+                Spacer(Modifier.height(16.dp))
+
+                val dialogColor = avatarColor(
+                    if (isEdit) s.profiles.indexOfFirst { it.profile_id == s.editing!!.profile_id }
+                    else s.profiles.size
+                )
+                Avatar(110, dialogColor) { Initial(s.nameInput, 48) }
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = s.nameInput, onValueChange = vm::onName,
+                    singleLine = true, isError = s.dialogError != null,
+                    placeholder = { Text("프로필 이름", fontFamily = Pretendard) },
+                    shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()
+                )
+                Box(Modifier.fillMaxWidth().height(20.dp)) {
+                    s.dialogError?.let {
+                        Text(
+                            it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard,
+                            fontSize = 12.sp, maxLines = 1,
+                            modifier = Modifier.padding(start = 4.dp, top = 3.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    "원문 언어", fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp)
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("ja" to "일본어", "zh" to "중국어", "en" to "영어").forEach { (code, label) ->
+                        val selected = s.langInput == code
+                        FilterChip(
+                            selected = selected,
+                            onClick = { vm.onLang(code) },
+                            modifier = Modifier.weight(1f),
+                            label = {
+                                Text(
+                                    label, fontFamily = Pretendard, fontSize = 13.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BrandBlue,
+                                selectedLabelColor = Color.White
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true, selected = selected,
+                                selectedBorderColor = BrandBlue
+                            )
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (isEdit) {
+                        Button(
+                            onClick = vm::askDelete, enabled = !s.saving,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD90000), contentColor = Color.White
+                            )
+                        ) { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    BlueButton("취소", { if (!s.saving) vm.closeDialog() })
+                    Spacer(Modifier.width(8.dp))
+                    BlueButton("저장", { vm.save() })
+                }
+            }
+        }
+    }
+
+    if (s.confirmDelete) {
+        AlertDialog(
+            onDismissRequest = vm::cancelDelete,
+            title = { Text("프로필 삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "정말 이 프로필을 삭제하시겠습니까?\n등록한 캐릭터, 호칭, 단어도 함께 삭제되며 되돌릴 수 없어요.",
+                    fontFamily = Pretendard
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = vm::delete) {
+                    Text("삭제", color = Color(0xFFD90000), fontFamily = Pretendard)
+                }
+            },
+            dismissButton = { TextButton(onClick = vm::cancelDelete) { Text("취소", fontFamily = Pretendard) } }
+        )
+    }
+}
