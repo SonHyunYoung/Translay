@@ -23,41 +23,73 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 
+private val AvatarPalette = listOf(
+    Color(0xFFE57373), Color(0xFF64B5F6), Color(0xFF81C784), Color(0xFFFFB74D),
+    Color(0xFFBA68C8), Color(0xFF4DB6AC), Color(0xFFF06292), Color(0xFF7986CB)
+)
+private fun avatarColor(index: Int) = AvatarPalette[index % AvatarPalette.size]
+
 @Composable
-private fun Avatar(size: Int, content: @Composable BoxScope.() -> Unit = {}) {
+private fun Avatar(
+    size: Int,
+    color: Color = Color(0xFFD9D9D9),
+    content: @Composable BoxScope.() -> Unit = {}
+) {
     Box(
-        Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFD9D9D9)),
+        Modifier.size(size.dp).clip(CircleShape).background(color),
         contentAlignment = Alignment.Center, content = content
     )
 }
 
 @Composable
-private fun ProfileItem(label: String, onClick: () -> Unit, content: @Composable BoxScope.() -> Unit = {}) {
+private fun Initial(name: String, size: Int) {
+    Text(
+        name.trim().firstOrNull()?.uppercase() ?: "",
+        color = Color.White, fontFamily = Pretendard,
+        fontWeight = FontWeight.Bold, fontSize = size.sp
+    )
+}
+
+@Composable
+private fun ProfileItem(
+    label: String,
+    onClick: () -> Unit,
+    color: Color = Color(0xFFD9D9D9),
+    content: @Composable BoxScope.() -> Unit = {}
+) {
     Column(
-        Modifier.width(88.dp).clickable(onClick = onClick),
+        Modifier.width(120.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Avatar(72, content)
-        Spacer(Modifier.height(6.dp))
-        Text(label, fontFamily = Pretendard, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Avatar(96, color, content)
+        Spacer(Modifier.height(8.dp))
+        Text(label, fontFamily = Pretendard, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun ProfileGrid(
     s: ProfileUiState,
+    showAdd: Boolean,
     onProfile: (Profile) -> Unit,
     onAdd: () -> Unit
 ) {
-    // 최대 4개 + 추가 버튼 → 2열 그리드로 배치
-    val items: List<Profile?> = s.profiles + if (s.canAdd) listOf(null) else emptyList()
-    Column(verticalArrangement = Arrangement.spacedBy(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    val items: List<Profile?> = s.profiles + if (showAdd && s.canAdd) listOf(null) else emptyList()
+    Column(
+        Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         items.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 row.forEach { p ->
-                    if (p != null) ProfileItem(p.name, { onProfile(p) })
-                    else ProfileItem("프로필 추가", onAdd) {
-                        Icon(Icons.Filled.Add, "추가", Modifier.size(40.dp), tint = Color.DarkGray)
+                    if (p != null) {
+                        val color = avatarColor(s.profiles.indexOf(p))
+                        ProfileItem(p.name, { onProfile(p) }, color) { Initial(p.name, 36) }
+                    } else {
+                        ProfileItem("프로필 추가", onAdd) {
+                            Icon(Icons.Filled.Add, "추가", Modifier.size(52.dp), tint = Color.DarkGray)
+                        }
                     }
                 }
             }
@@ -73,19 +105,23 @@ private fun BlueButton(text: String, onClick: () -> Unit, modifier: Modifier = M
     ) { Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
 }
 
+/** 로고+라인은 전체 폭, 제목/부제는 24dp 안쪽 왼쪽 정렬 */
 @Composable
 private fun Header(title: String, subtitle: String? = null) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(24.dp))
-        Logo(36)
-        Spacer(Modifier.height(8.dp))
-        HorizontalDivider()
-        Spacer(Modifier.height(40.dp))
-        Text(title, color = accentColor(), fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 34.sp)
-        if (subtitle != null) {
-            Spacer(Modifier.height(6.dp))
-            Text(subtitle, color = accentColor(), fontFamily = Pretendard, fontWeight = FontWeight.Bold,
-                fontSize = 13.sp, textAlign = TextAlign.Center)
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Logo(48) }
+        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(Modifier.fillMaxWidth())
+        Spacer(Modifier.height(32.dp))
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            Text(title, color = accentColor(), fontFamily = Pretendard,
+                fontWeight = FontWeight.Black, fontSize = 32.sp)
+            if (subtitle != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(subtitle, fontFamily = Pretendard, fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Spacer(Modifier.height(32.dp))
     }
@@ -99,15 +135,18 @@ fun ProfileSelectScreen(
     vm: ProfileViewModel = viewModel()
 ) {
     val s by vm.state.collectAsState()
-    var showAdd by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vm.load() }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Header("프로필 선택")
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Header("프로필 선택", "접속할 프로필을 선택해주세요")
         if (s.loading) CircularProgressIndicator()
-        s.message?.let { Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp) }
-        ProfileGrid(s, onProfile = { vm.select(it); onSelected() }, onAdd = { vm.openCreate() })
-        Spacer(Modifier.height(28.dp))
-        BlueButton("프로필 편집", onEdit)
+        s.message?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp)
+        }
+        ProfileGrid(s, showAdd = true, onProfile = { vm.select(it); onSelected() }, onAdd = { vm.openCreate() })
+        Spacer(Modifier.height(32.dp))
+        BlueButton("프로필 편집", onEdit,
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp))
     }
     if (s.dialogOpen) ProfileDialog(s, vm)
 }
@@ -117,13 +156,16 @@ fun ProfileSelectScreen(
 fun ProfileEditScreen(onDone: () -> Unit, vm: ProfileViewModel = viewModel()) {
     val s by vm.state.collectAsState()
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Header("프로필 편집", "편집/삭제할 프로필을 선택해주세요")
         if (s.loading) CircularProgressIndicator()
-        s.message?.let { Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp) }
-        ProfileGrid(s.copy(profiles = s.profiles), onProfile = { vm.openEdit(it) }, onAdd = { vm.openCreate() })
-        Spacer(Modifier.height(28.dp))
-        BlueButton("설정 완료", onDone, Modifier.fillMaxWidth().height(48.dp))
+        s.message?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp)
+        }
+        ProfileGrid(s, showAdd = false, onProfile = { vm.openEdit(it) }, onAdd = {})
+        Spacer(Modifier.height(32.dp))
+        BlueButton("설정 완료", onDone,
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp))
     }
     if (s.dialogOpen) ProfileDialog(s, vm)
 }
@@ -144,7 +186,11 @@ private fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
-                Avatar(110)
+                val dialogColor = avatarColor(
+                    if (isEdit) s.profiles.indexOfFirst { it.profile_id == s.editing!!.profile_id }
+                    else s.profiles.size
+                )
+                Avatar(110, dialogColor) { Initial(s.nameInput, 48) }
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = s.nameInput, onValueChange = vm::onName,
