@@ -28,13 +28,6 @@ function buildPrompt({ text, sourceLanguage, glossary, context, speaker }) {
     wordBlock += glossary.map(w => `- ${w.source} → ${w.target}`).join('\n');
   }
 
-  // 문맥 블록 (앱이 보낸 이전 대사)
-  let contextBlock = '';
-  if (context && context.length > 0) {
-    contextBlock = '【이전 대사 (문맥 참고용)】\n';
-    contextBlock += context.map(c => `- ${c.source_text} → ${c.translated_text}`).join('\n');
-  }
-
   const speakerRule = speaker
     ? '\n7. 이 대사는 위 【현재 화자】가 말하는 것입니다. 화자의 입장에 맞는 어투로 번역하세요.'
     : '';
@@ -50,7 +43,6 @@ function buildPrompt({ text, sourceLanguage, glossary, context, speaker }) {
 
 ${speakerBlock}
 ${wordBlock}
-${contextBlock}
 
 【번역할 텍스트】
 ${text}`;
