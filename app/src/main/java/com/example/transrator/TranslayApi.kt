@@ -13,14 +13,14 @@ interface TranslayApi {
         @Body request: TranslateRequest
     ): TranslateResponse
 
-    @POST("auth/login")
+    @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
-    @POST("auth/signUp")
+    @POST("api/auth/signUp")
     suspend fun signUp(@Body request: SignUpRequest): MessageResponse
 
     // 200 = 사용 가능, 409 = 중복 (HttpException으로 옴)
-    @GET("auth/EmailCheck")
+    @GET("api/auth/EmailCheck")
     suspend fun emailCheck(@Query("email") email: String): MessageResponse
 }
 
