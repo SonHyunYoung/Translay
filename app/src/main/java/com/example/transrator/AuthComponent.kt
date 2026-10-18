@@ -1,12 +1,18 @@
 package com.example.transrator
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -17,9 +23,15 @@ import androidx.compose.ui.unit.sp
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 
+private val BrandBlueLight = Color(0xFF6C9BFF)
+
+/** 라이트에서는 브랜드색, 다크에서는 대비를 위해 밝은 파랑 (글자/링크용) */
+@Composable
+internal fun accentColor(): Color = if (isSystemInDarkTheme()) BrandBlueLight else BrandBlue
+
 @Composable
 internal fun Logo(size: Int = 44) = Text(
-    "Translay", color = BrandBlue, fontFamily = Pretendard,
+    "Translay", color = accentColor(), fontFamily = Pretendard,
     fontWeight = FontWeight.Black, fontSize = size.sp
 )
 
@@ -28,48 +40,108 @@ internal fun BrandButton(
     text: String,
     enabled: Boolean = true,
     loading: Boolean = false,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick, enabled = enabled && !loading,
-        modifier = Modifier.fillMaxWidth().height(48.dp),
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = BrandBlue, contentColor = Color.White,
             disabledContainerColor = BrandBlue.copy(alpha = 0.4f),
-            disabledContentColor = Color.White
+            disabledContentColor = Color.White.copy(alpha = 0.8f)
         )
     ) {
         if (loading) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
-        else Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        else Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp)
     }
 }
 
+/** 오류 문구 전용. 오류가 없으면 비어 있고, 자리(20dp)만 유지해서 간격이 일정함 */
 @Composable
-internal fun Field(
+internal fun Hint(error: String?) {
+    Box(Modifier.fillMaxWidth().height(20.dp)) {
+        if (error != null) Text(
+            error, fontFamily = Pretendard, fontSize = 12.sp, maxLines = 1,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(start = 4.dp, top = 3.dp)
+        )
+    }
+}
+
+/** 라벨 + 입력칸 + 안내 문구 한 세트 */
+@Composable
+internal fun FormField(
     value: String,
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    label: String? = null,
+    labelHint: String? = null,          // 라벨 옆에 붙는 작은 규칙 안내
     placeholder: String? = null,
+    leadingIcon: ImageVector? = null,
     isPassword: Boolean = false,
     keyboard: KeyboardType = KeyboardType.Text,
-    error: String? = null
+    error: String? = null,              // 값이 있으면 빨간 테두리 + 아래 빨간 문구
+    trailing: (@Composable () -> Unit)? = null
 ) {
-    OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = modifier.fillMaxWidth(),
-        singleLine = true, shape = RoundedCornerShape(8.dp), isError = error != null,
-        placeholder = placeholder?.let { { Text(it, fontFamily = Pretendard, color = Color.Gray) } },
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = if (isPassword) KeyboardType.Password else keyboard),
-        textStyle = TextStyle(fontFamily = Pretendard, fontSize = 16.sp)
-    )
-}
+    var visible by remember { mutableStateOf(false) }
 
-@Composable
-internal fun Hint(text: String?, ok: Boolean = false) {
-    if (text != null) Text(
-        text, fontFamily = Pretendard, fontSize = 12.sp,
-        color = if (ok) BrandBlue else MaterialTheme.colorScheme.error,
-        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp)
-    )
+    Column(modifier.fillMaxWidth()) {
+        if (label != null) Row(
+            Modifier.padding(start = 4.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+            if (labelHint != null) {
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    labelHint, fontFamily = Pretendard, fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.Top) {
+            OutlinedTextField(
+                value = value, onValueChange = onChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true, isError = error != null,
+                shape = RoundedCornerShape(12.dp),
+                placeholder = placeholder?.let {
+                    { Text(it, fontFamily = Pretendard, fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                },
+                leadingIcon = leadingIcon?.let { { Icon(it, null, tint = accentColor()) } },
+                trailingIcon = if (isPassword) {
+                    {
+                        IconButton(onClick = { visible = !visible }) {
+                            Icon(
+                                if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                if (visible) "비밀번호 숨기기" else "비밀번호 보기",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else null,
+                visualTransformation =
+                    if (isPassword && !visible) PasswordVisualTransformation() else VisualTransformation.None,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isPassword) KeyboardType.Password else keyboard
+                ),
+                textStyle = TextStyle(
+                    fontFamily = Pretendard, fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedBorderColor = accentColor()
+                )
+            )
+            if (trailing != null) {
+                Spacer(Modifier.width(8.dp))
+                trailing()
+            }
+        }
+        Hint(error)
+    }
 }

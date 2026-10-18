@@ -1,6 +1,8 @@
 package com.example.transrator
 
+import android.R
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,17 +25,6 @@ import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 
 @Composable
-private fun LabeledRow(label: String, content: @Composable ColumnScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Text(
-            label, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-            textAlign = TextAlign.Center, modifier = Modifier.width(72.dp).padding(top = 16.dp)
-        )
-        Column(Modifier.weight(1f), content = content)
-    }
-}
-
-@Composable
 fun SignUpScreen(
     onBack: () -> Unit,
     onSignedUp: () -> Unit,
@@ -43,57 +34,86 @@ fun SignUpScreen(
     val context = LocalContext.current
     LaunchedEffect(s.success) {
         if (s.success) {
-            Toast.makeText(context, "회원가입이 완료되었어요. 로그인해주세요.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "회원가입에 성공했습니다. 로그인 페이지로 이동합니다.", Toast.LENGTH_SHORT).show()
             onSignedUp()
         }
     }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
     ) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "뒤로", tint = Color.Gray)
-            }
-            Logo(40)
+        IconButton(onClick = onBack, modifier = Modifier.padding(top = 8.dp)) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack, "뒤로",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
+        Text("회원가입", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 32.sp, color = accentColor())
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "회원가입을 통해 Translay의 실시간 번역을 경험해보세요!", fontFamily = Pretendard, fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(24.dp))
 
-        LabeledRow("이메일") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Field(s.email, vm::onEmail, Modifier.weight(1f), keyboard = KeyboardType.Email)
-                Spacer(Modifier.width(8.dp))
+        FormField(
+            s.name, vm::onName, label = "이름",
+            placeholder = "2~15자로 입력해주세요",
+            error = s.nameError
+        )
+        Spacer(Modifier.height(4.dp))
+        FormField(
+            s.email, vm::onEmail, label = "이메일", placeholder = "example@email.com",
+            keyboard = KeyboardType.Email,
+            error = if (s.emailMessage != null && !s.emailOk) s.emailMessage else null,
+            trailing = {
                 Button(
-                    onClick = vm::checkEmail, shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
+                    onClick = vm::checkEmail,
+                    modifier = Modifier.height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandBlue, contentColor = Color.White
+                    )
                 ) {
                     Text(
-                        "중복\n체크", fontFamily = Pretendard, fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp, textAlign = TextAlign.Center
+                        "중복확인", fontFamily = Pretendard, fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp, textAlign = TextAlign.Center
                     )
                 }
             }
-            Hint(s.emailMessage, ok = s.emailOk)
-        }
-        Spacer(Modifier.height(10.dp))
-        LabeledRow("이름") {
-            Field(s.name, vm::onName, error = s.nameError)
-            Hint(s.nameError ?: "2~15자, 공백과 _ . 외 특수기호 불가", ok = s.nameError == null)
-        }
-        Spacer(Modifier.height(10.dp))
-        LabeledRow("비밀번호") {
-            Field(s.password, vm::onPassword, isPassword = true, error = s.passwordError)
-            Hint(s.passwordError ?: "8자 이상, 대·소문자·숫자·특수문자 포함", ok = s.passwordError == null)
-        }
-        Spacer(Modifier.height(10.dp))
-        LabeledRow("비밀번호\n확인") {
-            Field(s.passwordConfirm, vm::onConfirm, isPassword = true, error = s.confirmError)
-            Hint(s.confirmError)
-        }
-        Spacer(Modifier.height(20.dp))
+        )
+        Spacer(Modifier.height(4.dp))
+        FormField(
+            s.password, vm::onPassword, label = "비밀번호",
+            labelHint = "8자 이상, 대·소문자·숫자·특수문자 포함",
+            placeholder = "비밀번호를 입력해주세요",
+            isPassword = true, error = s.passwordError
+        )
+        Spacer(Modifier.height(4.dp))
+        FormField(
+            s.passwordConfirm, vm::onConfirm, label = "비밀번호 확인",
+            placeholder = "비밀번호를 한 번 더 입력해주세요",
+            isPassword = true, error = s.confirmError
+        )
+        Spacer(Modifier.height(4.dp))
         Hint(s.error)
+
         BrandButton("회원가입", enabled = s.canSubmit, loading = s.isLoading, onClick = vm::signUp)
+
+        Spacer(Modifier.height(16.dp))
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("이미 계정이 있으신가요? ", fontFamily = Pretendard, fontSize = 13.sp)
+            Text(
+                "로그인 페이지로", fontFamily = Pretendard, fontWeight = FontWeight.Bold,
+                fontSize = 13.sp, color = accentColor(),
+                modifier = Modifier.clickable(onClick = onBack).padding(vertical = 6.dp)
+            )
+        }
     }
 }

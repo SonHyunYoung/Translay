@@ -297,7 +297,7 @@ class CaptureService : Service() {
         }
     }
     private fun requestTranslate(text: String, profileId: Int) {
-        val token = "Bearer "   // 기존 토큰 그대로
+        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzkxNzMxODQzLCJleHAiOjE3OTE3NzUwNDMsImp0aSI6IjBhNzEzNGY1LWMwNDgtNDMzOC1hMzY1LWQyZjhkNjYzNDMwMyJ9.98ua4EjNGWZDE88IXiOq5LIWh4MuW8ZhHEYTKfVxSDI"   // 기존 토큰 그대로
         val myRequestId = ++requestId
 
         serviceScope.launch(Dispatchers.IO) {
