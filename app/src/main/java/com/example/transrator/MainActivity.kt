@@ -6,9 +6,11 @@ import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +32,7 @@ import com.example.transrator.ui.theme.TransratorTheme
 class MainActivity : ComponentActivity() {
 
     private val vm: MainViewModel by viewModels()
+    private var lastBackPressed = 0L
 
     private val projectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -40,13 +43,32 @@ class MainActivity : ComponentActivity() {
                 putExtra("data", result.data)
             })
             startService(Intent(this, OverlayService::class.java))
-            Toast.makeText(this, "번역을 시작합니다. 게임 화면에서 '시작'을 눌러주세요.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this, "번역을 시작합니다. 게임 화면에서 '시작'을 눌러주세요.", Toast.LENGTH_LONG
+            ).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // 뒤로가기 두 번 누르면 종료
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastBackPressed < 2000) {
+                    stopTranslate()
+                    finish()
+                } else {
+                    lastBackPressed = now
+                    Toast.makeText(
+                        this@MainActivity, "한 번 더 누르면 앱이 종료됩니다.", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
+
         setContent {
             TransratorTheme {
                 Surface(Modifier.fillMaxSize().systemBarsPadding()) {
@@ -56,17 +78,13 @@ class MainActivity : ComponentActivity() {
                         avatarColor = avatarColor(s.profileIndex),
                         onStart = ::startTranslate,
                         onStop = ::stopTranslate,
-                        onChangeProfile = {
-                            startActivity(Intent(this, AuthActivity::class.java).apply {
-                                putExtra("start", "profiles")
-                            })
-                            finish()
-                        },
+                        onChangeProfile = { goToProfiles() },
                         onLogout = {
                             stopTranslate()
                             vm.logout {
                                 startActivity(Intent(this, AuthActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                            Intent.FLAG_ACTIVITY_CLEAR_TASK
                                 })
                             }
                         }
@@ -74,6 +92,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun goToProfiles() {
+        stopTranslate()   // 번역 중 프로필이 바뀌는 것을 방지
+        startActivity(Intent(this, AuthActivity::class.java).apply {
+            putExtra("start", "profiles")
+        })
+        finish()
     }
 
     private fun startTranslate() {
