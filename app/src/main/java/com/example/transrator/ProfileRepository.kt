@@ -22,4 +22,10 @@ class ProfileRepository(private val tokens: TokenManager) {
     } catch (e: Exception) {
         Result.failure(Exception("서버에 연결할 수 없습니다."))
     }
+
+    suspend fun create(name: String, lang: String) =
+        call { api.createProfile(auth(), ProfileRequest(name, lang)); Unit }
+
+    suspend fun update(id: Int, name: String, lang: String) =
+        call { api.updateProfile(auth(), id, ProfileRequest(name, lang)); Unit }
 }
