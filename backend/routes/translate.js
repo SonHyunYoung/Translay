@@ -5,9 +5,41 @@ const AuthMiddleWare = require("../middleware/auth");
 
 const router = express.Router();
 
+// 호칭이 없을 때 JSON_ARRAYAGG가 만드는 null 객체 제거 + 문자열로 오는 경우 파싱
+function normalizeCharacters(rows) {
+    return rows.map(c => {
+        let terms = c.terms;
+        if (typeof terms === "string") {
+            try { terms = JSON.parse(terms); } catch { terms = []; }
+        }
+        terms = (terms || []).filter(t => t && t.source && t.target);
+        return { ...c, terms };
+    });
+}
+
+// 원문의 캐릭터 이름/호칭을 등록된 한국어로 미리 치환 (긴 것부터)
+function replaceCharacterNames(text, characters) {
+    const pairs = [];
+    for (const c of characters) {
+        if (c.source_name && c.target_name) {
+            pairs.push({ from: c.source_name, to: c.target_name });
+        }
+        for (const t of c.terms) {
+            pairs.push({ from: t.source, to: t.target });
+        }
+    }
+    pairs.sort((a, b) => b.from.length - a.from.length);
+
+    let result = text;
+    for (const p of pairs) {
+        result = result.split(p.from).join(p.to);
+    }
+    return result;
+}
+
 router
 .post("/", AuthMiddleWare, async (req, res) => {
-    const { profileId, text, context } = req.body;
+    const { profileId, text, context, speaker } = req.body;
 
     if (!profileId || !text) {
         return res.status(400).json({
@@ -29,7 +61,7 @@ router
         }
 
         // 캐릭터 + 호칭 조회
-        const [characters] = await pool.query(
+        const [characterRows] = await pool.query(
             `SELECT c.character_id, c.source_name, c.target_name,
                 JSON_ARRAYAGG(
                     JSON_OBJECT('source', ct.source, 'target', ct.target)
@@ -40,20 +72,31 @@ router
              GROUP BY c.character_id`,
             [profileId]
         );
+        const characters = normalizeCharacters(characterRows);
 
-        // 캐릭터 이외의 고유명사 조회 
+        // 캐릭터 이외의 고유명사 조회
         const [words] = await pool.query(
             "SELECT source, target FROM wordtbl WHERE profile_id = ?",
             [profileId]
         );
 
-        // Gemini API 호출
+        // 전처리 치환
+        const preprocessed = replaceCharacterNames(text, characters);
+        console.log(`[전처리] ${text.replace(/\n/g, " / ")} → ${preprocessed.replace(/\n/g, " / ")}`);
+
+        // 화자(optional): 등록된 캐릭터면 한국어 이름으로 전달
+        let speakerName = null;
+        if (speaker) {
+            const found = characters.find(c => c.source_name === speaker);
+            speakerName = found ? found.target_name : null;
+        }
+
         const translatedText = await translate({
-            text,
+            text: preprocessed,
             sourceLanguage: profile[0].sourcelanguage,
-            characters,
             glossary: words,
-            context: context || []
+            context: context || [],
+            speaker: speakerName
         });
 
         return res.status(200).json({
