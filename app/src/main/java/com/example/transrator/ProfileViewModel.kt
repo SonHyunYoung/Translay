@@ -17,7 +17,7 @@ data class ProfileUiState(
     val dialogOpen: Boolean = false,
     val editing: Profile? = null,       // null이면 생성 모달
     val nameInput: String = "",
-    val langInput: String = "ja",
+    val langInput: String = "ja",       // 원문 언어 (ja / zh / en)
     val dialogError: String? = null,
     val confirmDelete: Boolean = false,
     val saving: Boolean = false
@@ -45,18 +45,27 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     fun select(p: Profile) = tokens.saveProfileId(p.profile_id)
 
     fun openCreate() {
-        _s.value = _s.value.copy(dialogOpen = true, editing = null, nameInput = "", dialogError = null)
+        _s.value = _s.value.copy(
+            dialogOpen = true, editing = null, nameInput = "", langInput = "ja", dialogError = null
+        )
     }
+
     fun openEdit(p: Profile) {
-        _s.value = _s.value.copy(dialogOpen = true, editing = p, nameInput = p.name, dialogError = null)
+        _s.value = _s.value.copy(
+            dialogOpen = true, editing = p, nameInput = p.name,
+            langInput = p.sourcelanguage ?: "ja", dialogError = null
+        )
     }
+
     fun closeDialog() {
         _s.value = _s.value.copy(dialogOpen = false, confirmDelete = false, dialogError = null)
     }
+
     fun onName(v: String) { _s.value = _s.value.copy(nameInput = v, dialogError = null) }
+    fun onLang(v: String) { _s.value = _s.value.copy(langInput = v) }
 
     private fun validate(name: String): String? = when {
-        name.trim().length !in 2..25 -> "프로필 이름은 2~25자로 입력해주세요."
+        name.length !in 2..25 -> "프로필 이름은 2~25자로 입력해주세요."
         !PROFILE_NAME_REGEX.matches(name) -> "_ . 를 제외한 특수기호는 사용할 수 없어요."
         else -> null
     }
@@ -65,11 +74,19 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
         val s = _s.value
         val name = s.nameInput.trim()
         validate(name)?.let { _s.value = s.copy(dialogError = it); return }
+
         _s.value = s.copy(saving = true)
         viewModelScope.launch {
-            val r = if (s.editing == null) repo.create(name) else repo.rename(s.editing.profile_id, name)
-            r.onSuccess { closeDialog(); _s.value = _s.value.copy(saving = false); load() }
-                .onFailure { _s.value = _s.value.copy(saving = false, dialogError = it.message) }
+            val e = s.editing
+            val r = if (e == null) repo.create(name, s.langInput)
+            else repo.update(e.profile_id, name, s.langInput)
+            r.onSuccess {
+                closeDialog()
+                _s.value = _s.value.copy(saving = false)
+                load()
+            }.onFailure {
+                _s.value = _s.value.copy(saving = false, dialogError = it.message)
+            }
         }
     }
 
@@ -83,9 +100,13 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
             repo.delete(p.profile_id)
                 .onSuccess {
                     if (tokens.profileId() == p.profile_id) tokens.saveProfileId(-1)
-                    closeDialog(); _s.value = _s.value.copy(saving = false); load()
+                    closeDialog()
+                    _s.value = _s.value.copy(saving = false)
+                    load()
                 }
-                .onFailure { _s.value = _s.value.copy(saving = false, confirmDelete = false, dialogError = it.message) }
+                .onFailure {
+                    _s.value = _s.value.copy(saving = false, confirmDelete = false, dialogError = it.message)
+                }
         }
     }
 }
