@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transrator.ui.theme.TransratorTheme
+import androidx.activity.compose.BackHandler
 
 class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +33,10 @@ class AuthActivity : ComponentActivity() {
                             )
                         }
                         composable("profiles") {
+                            BackHandler {
+                                TokenManager(this@AuthActivity).clear()   // 저장된 토큰/프로필 정보 삭제
+                                nav.navigate("login") { popUpTo("profiles") { inclusive = true } }
+                            }
                             ProfileSelectScreen(
                                 onSelected = {
                                     startActivity(Intent(this@AuthActivity, MainActivity::class.java))
@@ -54,4 +59,6 @@ class AuthActivity : ComponentActivity() {
             }
         }
     }
+
+
 }
