@@ -1,53 +1,71 @@
 package com.example.transrator
 
 class ChangeDetector(
-    private val stableRequired: Int = 2   // 연속 몇 회 같아야 완성으로 볼지
+    private val stableRequired: Int = 2,
+    private val similarityThreshold: Int = 2   // 이 글자 수 이하 차이는 같은 문장으로 간주
 ) {
-    private var candidate = ""        // 안정화 대기 중인 텍스트
+    private var candidate = ""
     private var stableCount = 0
-    private var lastConfirmed = ""    // 마지막으로 확정(번역 요청)한 텍스트
+    private var lastConfirmed = ""
 
-    /**
-     * OCR 원문을 받아서, 번역해야 할 때만 원문을 돌려준다.
-     * 번역이 필요 없으면 null.
-     */
     fun onOcr(raw: String): String? {
         val text = normalize(raw)
 
-        // 대사창이 비었음 → 다음 대사를 위해 초기화
         if (text.isEmpty()) {
             reset()
             return null
         }
 
-        // 이미 번역 요청한 문장이면 생략
-        if (text == lastConfirmed) return null
+        if (isSimilar(text, lastConfirmed)) return null   // 이미 번역한 것과 거의 같으면 생략
 
-        // 안정화 판정
-        if (text == candidate) {
+        if (isSimilar(text, candidate)) {
             stableCount++
         } else {
-            candidate = text        // 아직 바뀌는 중 (타이핑)
+            candidate = text
             stableCount = 1
         }
 
         if (stableCount >= stableRequired) {
             lastConfirmed = text
             stableCount = 0
-            return raw              // 번역은 정규화 전 원문으로
+            return raw
         }
         return null
     }
 
-    private fun reset() {
-        candidate = ""
-        stableCount = 0
-        lastConfirmed = ""
+    private fun isSimilar(a: String, b: String): Boolean {
+        if (a.isEmpty() || b.isEmpty()) return a == b
+        // 길이가 많이 다르면 바로 다른 문장으로 판단 (성능 최적화)
+        if (kotlin.math.abs(a.length - b.length) > similarityThreshold) return false
+        return levenshtein(a, b) <= similarityThreshold
+    }
+
+    private fun levenshtein(a: String, b: String): Int {
+        val dp = Array(a.length + 1) { IntArray(b.length + 1) }
+        for (i in 0..a.length) dp[i][0] = i
+        for (j in 0..b.length) dp[0][j] = j
+        for (i in 1..a.length) {
+            for (j in 1..b.length) {
+                dp[i][j] = if (a[i - 1] == b[j - 1]) dp[i - 1][j - 1]
+                else minOf(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1
+            }
+        }
+        return dp[a.length][b.length]
+    }
+
+    fun reset() {
+        candidate = ""; stableCount = 0; lastConfirmed = ""
     }
 
     companion object {
-        // 일본어는 공백이 의미 없으므로 모두 제거해 비교 안정성을 높임
         private val WS = Regex("\\s+")
-        fun normalize(text: String): String = text.replace(WS, "").trim()
+        private val ELLIPSIS = Regex("[.。．]{2,}|…+")
+
+        fun normalize(text: String): String {
+            return text
+                .replace(ELLIPSIS, "…")
+                .replace(WS, "")
+                .trim()
+        }
     }
 }

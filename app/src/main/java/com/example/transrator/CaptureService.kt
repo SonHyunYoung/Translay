@@ -12,6 +12,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -34,8 +36,6 @@ import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Button
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
 
 class CaptureService : Service() {
 
@@ -50,29 +50,28 @@ class CaptureService : Service() {
     private var screenHeight = 0
     private var screenDensity = 0
 
-    private var ocrPaused = false //ocr 정지 여부
+    @Volatile private var ocrPaused = false   // 번역 표시 중 OCR 정지 여부
 
     private val db by lazy { AppDatabase.getInstance(applicationContext) }
+    private val tokenManager by lazy { TokenManager(applicationContext) }
 
-    // 코루틴 스코프 (서비스 종료 시 cancel)
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var captureJob: Job? = null
 
-    // OCR 클라이언트는 한 번만 생성
     private val recognizer by lazy {
         TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
     }
 
-    // 변화 감지기 (연속 2회 같으면 완성으로 판정)
     private val detector = ChangeDetector(stableRequired = 2)
 
-    // 번역 요청 겹침 방지용 (가장 최신 요청의 결과만 반영)
-    private var requestId = 0
+    // 번역 응답 겹침 방지 (최신 요청만 반영)
+    @Volatile private var requestId = 0
+    // 탭이 들어올 때마다 증가: 탭 이전 화면에서 시작된 OCR 결과를 버리기 위함
+    @Volatile private var generation = 0
 
     companion object {
-        // 임시: 전체 화면으로 테스트. 나중에 대사창 영역으로 좁힐 것
-        // 이름표 제외, 본문 텍스트만 크롭
-        val DIALOG_REGION = RectF(0f, 0.54f, 1f, 0.62f)   // 예시, 실제 이미지 보고 조정
+        // 이름표 제외, 본문 텍스트만 크롭 (나중에 유저 지정 영역으로 교체)
+        val DIALOG_REGION = RectF(0f, 0.54f, 1f, 0.62f)
         const val CAPTURE_INTERVAL_MS = 500L
     }
 
@@ -88,15 +87,18 @@ class CaptureService : Service() {
         screenHeight = metrics.heightPixels
         screenDensity = metrics.densityDpi
 
+        // 유저 탭 감지 → 이전 대사 결과 무효화 + OCR 재개
         serviceScope.launch {
             CaptureResult.resumeSignal.collectLatest {
-                if (it > 0) {   // 초기값(0) 무시
+                if (it > 0) {
+                    requestId++
+                    generation++
+                    detector.reset()
                     ocrPaused = false
-                    Log.d("CAPTURE", "유저 탭 감지 → OCR 재개")
+                    Log.d("CAPTURE", "유저 탭 감지 → 진행 중 결과 무효화, OCR 재개")
                 }
             }
         }
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -139,7 +141,6 @@ class CaptureService : Service() {
             orientation = android.widget.LinearLayout.HORIZONTAL
         }
 
-        // 시작/정지 토글 버튼
         val toggleBtn = Button(this).apply {
             text = "시작"
             setOnClickListener {
@@ -187,16 +188,28 @@ class CaptureService : Service() {
         }
     }
 
+    private fun stopCaptureLoop() {
+        Log.d("CAPTURE", "캡처 루프 정지")
+        captureJob?.cancel()
+        captureJob = null
+        ocrPaused = false
+
+        // 세션 종료 시 캐시 정리
+        val profileId = tokenManager.profileId()
+        serviceScope.launch(Dispatchers.IO) {
+            db.translationCacheDao().clearByProfile(profileId)
+            Log.d("CACHE", "캐시 정리됨 (세션 종료)")
+        }
+    }
+
     // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
-        if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 자체를 생략
+        if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 생략
 
         val cropped = captureCropped() ?: return
-        //saveBitmapForDebug(cropped, "debug_crop.png")
         runOcr(cropped)
     }
 
-    // 최신 이미지를 꺼내 대사 영역만 크롭한 비트맵 반환
     private fun captureCropped(): Bitmap? {
         val image = imageReader?.acquireLatestImage() ?: return null
 
@@ -212,10 +225,7 @@ class CaptureService : Service() {
             )
             full.copyPixelsFromBuffer(plane.buffer)
 
-            Log.d("CAPTURE_SIZE", "full: ${full.width} x ${full.height}, screenWidth=$screenWidth, screenHeight=$screenHeight")
-            // 디버그: 전체 화면도 저장
-            //saveBitmapForDebug(full, "debug_full.png")
-
+            // 크롭은 패딩을 뺀 screenWidth 기준
             val x = (screenWidth * DIALOG_REGION.left).toInt()
             val y = (screenHeight * DIALOG_REGION.top).toInt()
             val w = (screenWidth * (DIALOG_REGION.right - DIALOG_REGION.left)).toInt()
@@ -229,27 +239,15 @@ class CaptureService : Service() {
         }
     }
 
-    private fun saveBitmapForDebug(bitmap: Bitmap, fileName: String = "debug_crop.png") {
-        try {
-            val file = java.io.File(getExternalFilesDir(null), fileName)
-            java.io.FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-            Log.d("DEBUG_CROP", "저장됨: ${file.absolutePath}")
-        } catch (e: Exception) {
-            Log.e("DEBUG_CROP", "저장 실패: $e")
-        }
-    }
-
     private fun runOcr(bitmap: Bitmap) {
-        val scaled = Bitmap.createScaledBitmap(
-            bitmap, bitmap.width * 2, bitmap.height * 2, true
-        )
-
-        val inputImage = InputImage.fromBitmap(scaled, 0)
+        val myGeneration = generation
+        val inputImage = InputImage.fromBitmap(bitmap, 0)
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
+                // 탭 이전 화면에서 시작된 OCR 결과면 버림
+                if (myGeneration != generation) return@addOnSuccessListener
+
                 val text = visionText.text
                 Log.d("OCR", "인식: ${text.replace("\n", " / ")}")
                 CaptureResult.ocrText = text
@@ -257,8 +255,8 @@ class CaptureService : Service() {
                 val toTranslate = detector.onOcr(text)
                 if (toTranslate != null) {
                     Log.d("DETECT", "완성 감지: $toTranslate")
-                    handleConfirmedText(toTranslate)
                     ocrPaused = true
+                    handleConfirmedText(toTranslate)
                 }
             }
             .addOnFailureListener { e ->
@@ -266,38 +264,33 @@ class CaptureService : Service() {
             }
             .addOnCompleteListener {
                 bitmap.recycle()
-                scaled.recycle()   // 확대본도 recycle
             }
     }
 
     private fun handleConfirmedText(text: String) {
-        val profileId = 3
+        val profileId = tokenManager.profileId()
+        if (profileId == -1) {
+            Log.e("CACHE", "선택된 프로필이 없습니다.")
+            ocrPaused = false
+            return
+        }
+        val normalized = ChangeDetector.normalize(text)
 
         serviceScope.launch(Dispatchers.IO) {
-            val cached = db.translationCacheDao().findBySourceText(profileId, text)
+            val cached = db.translationCacheDao().findBySourceText(profileId, normalized)
 
             if (cached != null) {
                 Log.d("CACHE", "캐시 히트 → 즉시 표시: ${cached.translatedText}")
                 CaptureResult.translatedText.value = cached.translatedText
             } else {
                 Log.d("CACHE", "캐시 미스 → 서버 요청")
-                requestTranslate(text, profileId)
+                requestTranslate(text, profileId, normalized)
             }
         }
     }
-    private fun stopCaptureLoop() {
-        Log.d("CAPTURE", "캡처 루프 정지")
-        captureJob?.cancel()
-        captureJob = null
 
-        // 세션 종료 시 캐시 정리
-        serviceScope.launch(Dispatchers.IO) {
-            db.translationCacheDao().clearByProfile(profileId = 3)
-            Log.d("CACHE", "캐시 정리됨 (세션 종료)")
-        }
-    }
-    private fun requestTranslate(text: String, profileId: Int) {
-        val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzkxNzMxODQzLCJleHAiOjE3OTE3NzUwNDMsImp0aSI6IjBhNzEzNGY1LWMwNDgtNDMzOC1hMzY1LWQyZjhkNjYzNDMwMyJ9.98ua4EjNGWZDE88IXiOq5LIWh4MuW8ZhHEYTKfVxSDI"   // 기존 토큰 그대로
+    private fun requestTranslate(text: String, profileId: Int, normalized: String) {
+        val token = "Bearer ${tokenManager.accessToken()}"
         val myRequestId = ++requestId
 
         serviceScope.launch(Dispatchers.IO) {
@@ -307,26 +300,31 @@ class CaptureService : Service() {
                     request = TranslateRequest(profileId = profileId, text = text)
                 )
 
+                val translated = response.translatedText ?: ""
+
+                // 번역 자체는 유효하므로 캐시에는 항상 저장
+                if (translated.isNotBlank()) {
+                    db.translationCacheDao().insert(
+                        TranslationCacheEntity(
+                            profileId = profileId,
+                            sourceText = normalized,
+                            translatedText = translated
+                        )
+                    )
+                }
+
+                // 탭으로 넘어갔거나 더 최신 요청이 있으면 표시하지 않음
                 if (myRequestId != requestId) {
-                    Log.d("TRANSLATE", "오래된 요청 결과 무시: ${response.translatedText}")
+                    Log.d("TRANSLATE", "오래된 요청 결과 표시 생략: $translated")
                     return@launch
                 }
 
-                val translated = response.translatedText ?: ""
                 Log.d("TRANSLATE", "번역 결과: $translated")
                 CaptureResult.translatedText.value = translated
 
-                db.translationCacheDao().insert(
-                    TranslationCacheEntity(
-                        profileId = profileId,
-                        sourceText = text,
-                        translatedText = translated
-                    )
-                )
-
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
-                ocrPaused = false
+                if (myRequestId == requestId) ocrPaused = false
             }
         }
     }
@@ -376,5 +374,5 @@ object CaptureResult {
     val translatedText = MutableStateFlow("")
 
     // OverlayService → CaptureService로 "탭했다" 알리는 신호
-    val resumeSignal = MutableStateFlow(0)   // 값이 바뀔 때마다 재개 트리거
+    val resumeSignal = MutableStateFlow(0)
 }
