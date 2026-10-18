@@ -1,132 +1,95 @@
 package com.example.transrator
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import com.example.transrator.capture.CaptureActivity
+import com.example.transrator.auth.AuthActivity
+import com.example.transrator.capture.CaptureService
 import com.example.transrator.capture.OverlayService
+import com.example.transrator.main.MainScreen
+import com.example.transrator.main.MainViewModel
+import com.example.transrator.profile.avatarColor
 import com.example.transrator.ui.theme.TransratorTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val vm: MainViewModel by viewModels()
+
+    private val projectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            startForegroundService(Intent(this, CaptureService::class.java).apply {
+                putExtra("resultCode", result.resultCode)
+                putExtra("data", result.data)
+            })
+            startService(Intent(this, OverlayService::class.java))
+            Toast.makeText(this, "번역을 시작합니다. 게임 화면에서 '시작'을 눌러주세요.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TransratorTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(modifier = Modifier.padding(innerPadding))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MainScreen(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-
-    // 오버레이 권한 상태 (있으면 true)
-    var hasPermission by remember {
-        mutableStateOf(Settings.canDrawOverlays(context))
-    }
-
-    // 다이얼로그 표시 여부
-    var showDialog by remember { mutableStateOf(false) }
-
-    // ----- 앱 켤 때 & 설정에서 돌아올 때 권한 확인 -----
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasPermission = Settings.canDrawOverlays(context)
-                showDialog = !hasPermission
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    // ----- 메인 화면 -----
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = if (hasPermission) "오버레이 권한: 허용됨" else "오버레이 권한: 필요함"
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ----- 오버레이 시작 버튼 (PoC 테스트용) -----
-        Button(
-            onClick = {
-                context.startService(Intent(context, OverlayService::class.java))
-            },
-            enabled = hasPermission   // 권한 있어야 활성화
-        ) {
-            Text("오버레이 시작")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // ----- 오버레이 중지 버튼 -----
-        Button(onClick = {
-            context.stopService(Intent(context, OverlayService::class.java))
-        }) {
-            Text("오버레이 중지")
-        }
-
-        Button(onClick = {
-            context.startActivity(Intent(context, CaptureActivity::class.java))
-        }) {
-            Text("캡처 테스트")
-        }
-    }
-
-
-    // ----- 권한 안내 다이얼로그 -----
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("권한 안내") },
-            text = {
-                Text(
-                    "앱의 사용을 위해서 '다른 앱 위에 표시' 권한이 필요합니다.\n\n" +
-                            "권한이 없으면 앱 사용이 불가합니다."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${context.packageName}")
+                Surface(Modifier.fillMaxSize().systemBarsPadding()) {
+                    val s by vm.state.collectAsState()
+                    MainScreen(
+                        profileName = s.profileName,
+                        avatarColor = avatarColor(s.profileIndex),
+                        onStart = ::startTranslate,
+                        onStop = ::stopTranslate,
+                        onChangeProfile = {
+                            startActivity(Intent(this, AuthActivity::class.java).apply {
+                                putExtra("start", "profiles")
+                            })
+                            finish()
+                        },
+                        onLogout = {
+                            stopTranslate()
+                            vm.logout {
+                                startActivity(Intent(this, AuthActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                })
+                            }
+                        }
                     )
-                    context.startActivity(intent)
-                }) {
-                    Text("설정으로 이동")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("나중에")
                 }
             }
-        )
+        }
+    }
+
+    private fun startTranslate() {
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "'다른 앱 위에 표시' 권한이 필요해요.", Toast.LENGTH_LONG).show()
+            startActivity(
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            )
+            return
+        }
+        val pm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        projectionLauncher.launch(pm.createScreenCaptureIntent())
+    }
+
+    private fun stopTranslate() {
+        stopService(Intent(this, CaptureService::class.java))
+        stopService(Intent(this, OverlayService::class.java))
     }
 }

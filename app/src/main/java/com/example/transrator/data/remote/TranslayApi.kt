@@ -28,6 +28,9 @@ interface TranslayApi {
     @POST("api/auth/signUp")
     suspend fun signUp(@Body request: SignUpRequest): MessageResponse
 
+    @POST("auth/logout")
+    suspend fun logout(@Header("Authorization") token: String): MessageResponse
+
     // 200 = 사용 가능, 409 = 중복 (HttpException으로 옴)
     @GET("api/auth/EmailCheck")
     suspend fun emailCheck(@Query("email") email: String): MessageResponse
@@ -43,5 +46,6 @@ interface TranslayApi {
 
     @DELETE("api/profile/{id}")
     suspend fun deleteProfile(@Header("Authorization") token: String, @Path("id") id: Int): MessageResponse
+
 }
 
