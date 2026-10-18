@@ -113,7 +113,7 @@ router
             message : "프로필 이름은 2자 이상 25자 이하까지만 입력가능합니다."
         })
     }
-    const allowedLanguage = ["ja", "zn", "en"];
+    const allowedLanguage = ["ja", "zh", "en"];
 
     if(sourceLanguage && !allowedLanguage.includes(sourceLanguage)){
         return res.status(400).json({
