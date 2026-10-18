@@ -17,6 +17,7 @@ data class ProfileUiState(
     val dialogOpen: Boolean = false,
     val editing: Profile? = null,       // null이면 생성 모달
     val nameInput: String = "",
+    val langInput: String = "ja",
     val dialogError: String? = null,
     val confirmDelete: Boolean = false,
     val saving: Boolean = false
