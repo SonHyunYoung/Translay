@@ -26,12 +26,22 @@ class AuthActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onLoggedIn = {
-                                    // TODO: 프로필 선택 화면으로 이동 (지금은 MainActivity)
-                                    startActivity(Intent(this@AuthActivity, MainActivity::class.java))
-                                    finish()
+                                    nav.navigate("profiles") { popUpTo("login") { inclusive = true } }
                                 },
                                 onSignUp = { nav.navigate("signup") }
                             )
+                        }
+                        composable("profiles") {
+                            ProfileSelectScreen(
+                                onSelected = {
+                                    startActivity(Intent(this@AuthActivity, MainActivity::class.java))
+                                    finish()
+                                },
+                                onEdit = { nav.navigate("profileEdit") }
+                            )
+                        }
+                        composable("profileEdit") {
+                            ProfileEditScreen(onDone = { nav.popBackStack() })
                         }
                         composable("signup") {
                             SignUpScreen(
