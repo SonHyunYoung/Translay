@@ -9,7 +9,8 @@ class ProfileRepository(private val tokens: TokenManager) {
 
     suspend fun list() = call { api.getProfiles(auth()).profiles }
     suspend fun create(name: String) = call { api.createProfile(auth(), ProfileRequest(name, "ja")); Unit }
-    suspend fun rename(id: Int, name: String) = call { api.updateProfile(auth(), id, ProfileRequest(name)); Unit }
+    suspend fun update(id: Int, name: String, lang: String) =
+        call { api.updateProfile(auth(), id, ProfileRequest(name, lang)); Unit }
     suspend fun delete(id: Int) = call { api.deleteProfile(auth(), id); Unit }
 
     private suspend fun <T> call(block: suspend () -> T): Result<T> = try {
@@ -26,6 +27,4 @@ class ProfileRepository(private val tokens: TokenManager) {
     suspend fun create(name: String, lang: String) =
         call { api.createProfile(auth(), ProfileRequest(name, lang)); Unit }
 
-    suspend fun update(id: Int, name: String, lang: String) =
-        call { api.updateProfile(auth(), id, ProfileRequest(name, lang)); Unit }
 }
