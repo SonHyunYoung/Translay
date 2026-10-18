@@ -3,6 +3,8 @@ package com.example.transrator.data.remote
 import com.example.transrator.auth.LoginRequest
 import com.example.transrator.auth.LoginResponse
 import com.example.transrator.auth.MessageResponse
+import com.example.transrator.auth.RefreshRequest
+import com.example.transrator.auth.RefreshResponse
 import com.example.transrator.auth.SignUpRequest
 import com.example.transrator.profile.ProfileListResponse
 import com.example.transrator.profile.ProfileRequest
