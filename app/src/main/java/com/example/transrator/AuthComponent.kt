@@ -90,6 +90,7 @@ internal fun FormField(
     isPassword: Boolean = false,
     keyboard: KeyboardType = KeyboardType.Text,
     error: String? = null,              // 값이 있으면 빨간 테두리 + 아래 빨간 문구
+    success: String? = null,            //값이 있으면 파란 문구
     trailing: (@Composable () -> Unit)? = null
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -149,6 +150,6 @@ internal fun FormField(
                 trailing()
             }
         }
-        Hint(error)
+        Hint(error, success)
     }
 }
