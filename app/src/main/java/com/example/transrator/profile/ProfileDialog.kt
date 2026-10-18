@@ -12,6 +12,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.transrator.auth.Logo
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 
@@ -123,9 +124,4 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
             dismissButton = { TextButton(onClick = vm::cancelDelete) { Text("취소", fontFamily = Pretendard) } }
         )
     }
-}
-
-@Composable
-fun Logo(x0: Int) {
-    TODO("Not yet implemented")
 }
