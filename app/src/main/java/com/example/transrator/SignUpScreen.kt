@@ -67,6 +67,7 @@ fun SignUpScreen(
             s.email, vm::onEmail, label = "이메일", placeholder = "example@email.com",
             keyboard = KeyboardType.Email,
             error = if (s.emailMessage != null && !s.emailOk) s.emailMessage else null,
+            success = if (s.emailOk) s.emailMessage else null,
             trailing = {
                 Button(
                     onClick = vm::checkEmail,
@@ -84,18 +85,21 @@ fun SignUpScreen(
                 }
             }
         )
-        Spacer(Modifier.height(4.dp))
         FormField(
             s.password, vm::onPassword, label = "비밀번호",
             labelHint = "8자 이상, 대·소문자·숫자·특수문자 포함",
             placeholder = "비밀번호를 입력해주세요",
-            isPassword = true, error = s.passwordError
+            isPassword = true,
+            error = s.passwordError,
+            success = if (s.password.isNotEmpty() && s.passwordError == null) "사용 가능한 비밀번호예요." else null
         )
         Spacer(Modifier.height(4.dp))
         FormField(
             s.passwordConfirm, vm::onConfirm, label = "비밀번호 확인",
             placeholder = "비밀번호를 한 번 더 입력해주세요",
-            isPassword = true, error = s.confirmError
+            isPassword = true,
+            error = s.confirmError,
+            success = if (s.passwordConfirm.isNotEmpty() && s.confirmError == null) "비밀번호가 일치해요." else null
         )
         Spacer(Modifier.height(4.dp))
         Hint(s.error)
