@@ -58,15 +58,22 @@ internal fun BrandButton(
     }
 }
 
-/** 오류 문구 전용. 오류가 없으면 비어 있고, 자리(20dp)만 유지해서 간격이 일정함 */
+/** 오류는 빨간색, 성공 안내는 파란색. 자리(20dp)는 항상 확보 */
 @Composable
-internal fun Hint(error: String?) {
+internal fun Hint(error: String?, success: String? = null) {
     Box(Modifier.fillMaxWidth().height(20.dp)) {
-        if (error != null) Text(
-            error, fontFamily = Pretendard, fontSize = 12.sp, maxLines = 1,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(start = 4.dp, top = 3.dp)
-        )
+        when {
+            error != null -> Text(
+                error, fontFamily = Pretendard, fontSize = 12.sp, maxLines = 1,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 4.dp, top = 3.dp)
+            )
+            success != null -> Text(
+                success, fontFamily = Pretendard, fontSize = 12.sp, maxLines = 1,
+                color = accentColor(),
+                modifier = Modifier.padding(start = 4.dp, top = 3.dp)
+            )
+        }
     }
 }
 
