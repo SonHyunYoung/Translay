@@ -39,7 +39,7 @@ function replaceCharacterNames(text, characters) {
 
 router
 .post("/", AuthMiddleWare, async (req, res) => {
-    const { profileId, text, context, speaker } = req.body;
+    const { profileId, text, speaker } = req.body;
 
     if (!profileId || !text) {
         return res.status(400).json({
@@ -95,7 +95,6 @@ router
             text: preprocessed,
             sourceLanguage: profile[0].sourcelanguage,
             glossary: words,
-            context: context || [],
             speaker: speakerName
         });
 
