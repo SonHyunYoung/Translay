@@ -38,8 +38,7 @@ function buildPrompt({ text, sourceLanguage, glossary, context, speaker }) {
 2. 그 단어에 붙는 조사(은/는/이/가 등)는 받침에 맞게 자연스럽게 쓰세요.
 3. 목록에 없는 인물 이름을 임의로 만들어내지 마세요.
 4. 이 텍스트는 OCR로 추출되어 한자가 일부 잘못 인식되었을 수 있습니다. 문맥상 어색한 글자가 있으면 자연스럽게 추정해서 번역하세요.
-5. 이전 대사의 흐름을 자연스럽게 이어받아 번역하세요.
-6. 번역 결과만 출력하고, 설명이나 부연은 절대 추가하지 마세요.${speakerRule}
+5. 번역 결과만 출력하고, 설명이나 부연은 절대 추가하지 마세요.${speakerRule}
 
 ${speakerBlock}
 ${wordBlock}
