@@ -62,6 +62,7 @@ fun MainScreen(
     Scaffold(
         topBar = {
             Column {
+                Spacer(Modifier.height(20.dp))
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -159,7 +160,7 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
     val stopColor = Color(0xFFD90000)
 
     Column(
-        Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 30.dp),
+        Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(32.dp))   // 버튼을 아래로 내리는 여백
