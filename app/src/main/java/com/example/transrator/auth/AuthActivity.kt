@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transrator.MainActivity
+import com.example.transrator.data.local.ThemeManager
 import com.example.transrator.data.local.TokenManager
 import com.example.transrator.profile.ProfileEditScreen
 import com.example.transrator.profile.ProfileSelectScreen
@@ -23,6 +24,7 @@ import com.example.transrator.ui.theme.TransratorTheme
 
 class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.init(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

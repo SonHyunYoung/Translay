@@ -25,6 +25,7 @@ import com.example.transrator.auth.AuthActivity
 import com.example.transrator.capture.CaptureResult
 import com.example.transrator.capture.CaptureService
 import com.example.transrator.capture.OverlayService
+import com.example.transrator.data.local.ThemeManager
 import com.example.transrator.main.MainScreen
 import com.example.transrator.main.MainViewModel
 import com.example.transrator.profile.avatarColor
@@ -51,6 +52,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.init(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

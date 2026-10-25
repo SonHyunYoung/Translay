@@ -29,6 +29,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import com.example.transrator.account.AccountScreen
 import com.example.transrator.auth.Logo
 import com.example.transrator.auth.accentColor
 import com.example.transrator.glossary.GlossaryTab
@@ -60,7 +61,9 @@ fun MainScreen(
     var tab by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
-    val soon = { Toast.makeText(context, "준비 중인 기능이에요.", Toast.LENGTH_SHORT).show() }
+    var showAccount by remember { mutableStateOf(false) }
+    BackHandler(enabled = showAccount) { showAccount = false }
+    PopupItem("계정 설정") { menuOpen = false; showAccount = true }
 
     BackHandler(enabled = tab != 0) { tab = 0 }   // import androidx.activity.compose.BackHandler
 
@@ -101,7 +104,7 @@ fun MainScreen(
                                             )
                                         }
                                         HorizontalDivider()
-                                        PopupItem("계정 설정") { menuOpen = false; soon() }
+                                        PopupItem("계정 설정") { menuOpen = false; showAccount = true }
                                         PopupItem("프로필 변경") { menuOpen = false; onChangeProfile() }
                                         PopupItem("로그아웃", Color(0xFFD90000)) {
                                             menuOpen = false; confirmLogout = true
@@ -134,10 +137,12 @@ fun MainScreen(
         }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
-            when (tab) {
+            if (showAccount) {
+                AccountScreen(onDone = { showAccount = false; tab = 0 })
+            } else when (tab) {
                 0 -> HomeTab(running, onStart, onStop)
                 1 -> GlossaryTab()
-                else -> SettingsScreen(onDone = { tab = 0 })   // import ...settings.SettingsTab
+                else -> SettingsScreen(onDone = { tab = 0 })
             }
         }
     }

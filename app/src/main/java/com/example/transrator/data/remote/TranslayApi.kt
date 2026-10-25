@@ -1,5 +1,8 @@
 package com.example.transrator.data.remote
 
+import com.example.transrator.account.MyPageResponse
+import com.example.transrator.account.NameRequest
+import com.example.transrator.account.PasswordRequest
 import com.example.transrator.auth.LoginRequest
 import com.example.transrator.auth.LoginResponse
 import com.example.transrator.auth.MessageResponse
@@ -80,6 +83,15 @@ interface TranslayApi {
     suspend fun createWord(@Header("Authorization") t: String, @Path("pid") pid: Int, @Body b: WordRequest): MessageResponse
     @DELETE("api/word/{pid}/{wid}")
     suspend fun deleteWord(@Header("Authorization") t: String, @Path("pid") pid: Int, @Path("wid") wid: Int): MessageResponse
+
+    @GET("api/user/mypage")
+    suspend fun myPage(@Header("Authorization") t: String): MyPageResponse
+
+    @PATCH("api/user/mypage/name")
+    suspend fun updateName(@Header("Authorization") t: String, @Body b: NameRequest): MessageResponse
+
+    @PATCH("api/user/mypage/password")
+    suspend fun updatePassword(@Header("Authorization") t: String, @Body b: PasswordRequest): MessageResponse
 
 }
 
