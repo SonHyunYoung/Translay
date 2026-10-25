@@ -131,6 +131,8 @@ class CaptureService : Service() {
     }
 
     private fun setupVirtualDisplay() {
+        CaptureResult.running.value = true
+
         imageReader = ImageReader.newInstance(
             screenWidth, screenHeight, PixelFormat.RGBA_8888, 2
         )
@@ -371,6 +373,7 @@ class CaptureService : Service() {
         imageReader?.close()
         mediaProjection?.stop()
         recognizer.close()
+        CaptureResult.running.value = false
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -379,6 +382,8 @@ class CaptureService : Service() {
 object CaptureResult {
     var bitmap: Bitmap? = null
     var ocrText: String? = null
+
+    val running = MutableStateFlow(false)
     val translatedText = MutableStateFlow("")
 
     // OverlayService → CaptureService로 "탭했다" 알리는 신호

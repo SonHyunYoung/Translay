@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.transrator.auth.AuthActivity
+import com.example.transrator.capture.CaptureResult
 import com.example.transrator.capture.CaptureService
 import com.example.transrator.capture.OverlayService
 import com.example.transrator.main.MainScreen
@@ -73,9 +74,11 @@ class MainActivity : ComponentActivity() {
             TransratorTheme {
                 Surface(Modifier.fillMaxSize().systemBarsPadding()) {
                     val s by vm.state.collectAsState()
+                    val running by CaptureResult.running.collectAsState()
                     MainScreen(
                         profileName = s.profileName,
                         avatarColor = avatarColor(s.profileIndex),
+                        running = running,
                         onStart = ::startTranslate,
                         onStop = ::stopTranslate,
                         onChangeProfile = { goToProfiles() },
