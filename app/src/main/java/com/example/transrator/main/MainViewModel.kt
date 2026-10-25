@@ -3,7 +3,7 @@ package com.example.transrator.main
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transrator.data.TokenManager
+import com.example.transrator.data.local.TokenManager
 import com.example.transrator.data.remote.RetrofitClient
 import com.example.transrator.profile.Profile
 import com.example.transrator.profile.ProfileRepository

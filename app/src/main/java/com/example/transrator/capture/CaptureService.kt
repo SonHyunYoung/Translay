@@ -41,7 +41,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import com.example.transrator.data.local.AppDatabase
 import com.example.transrator.data.remote.RetrofitClient
-import com.example.transrator.data.TokenManager
+import com.example.transrator.data.local.TokenManager
 import com.example.transrator.data.remote.TranslateRequest
 import com.example.transrator.data.local.TranslationCacheEntity
 

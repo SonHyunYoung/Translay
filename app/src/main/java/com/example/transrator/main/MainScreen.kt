@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import com.example.transrator.auth.Logo
 import com.example.transrator.auth.accentColor
+import com.example.transrator.glossary.GlossaryTab
 import com.example.transrator.profile.Avatar
 import com.example.transrator.profile.Initial
 import com.example.transrator.ui.theme.BrandBlue
@@ -131,6 +132,7 @@ fun MainScreen(
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (tab) {
                 0 -> HomeTab(running, onStart, onStop)
+                1 -> GlossaryTab()          // import com.example.transrator.glossary.GlossaryTab
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("준비 중인 화면이에요.", fontFamily = Pretendard)
                 }

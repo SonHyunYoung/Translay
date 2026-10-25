@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transrator.MainActivity
-import com.example.transrator.data.TokenManager
+import com.example.transrator.data.local.TokenManager
 import com.example.transrator.profile.ProfileEditScreen
 import com.example.transrator.profile.ProfileSelectScreen
 import com.example.transrator.ui.theme.TransratorTheme
