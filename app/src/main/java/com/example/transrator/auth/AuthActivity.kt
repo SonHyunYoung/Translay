@@ -32,7 +32,7 @@ class AuthActivity : ComponentActivity() {
 
         setContent {
             TransratorTheme {
-                Surface(Modifier.fillMaxSize().systemBarsPadding()) {
+                Surface(Modifier.fillMaxSize()) {
                     var startRoute by remember {
                         mutableStateOf<String?>(
                             when {

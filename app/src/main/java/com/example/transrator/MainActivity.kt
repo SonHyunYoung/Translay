@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TransratorTheme {
-                Surface(Modifier.fillMaxSize().systemBarsPadding()) {
+                Surface(Modifier.fillMaxSize()) {
                     val s by vm.state.collectAsState()
                     val running by CaptureResult.running.collectAsState()
                     MainScreen(
