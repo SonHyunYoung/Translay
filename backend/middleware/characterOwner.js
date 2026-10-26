@@ -1,6 +1,6 @@
 const pool = require("../database/maria");
 
-const characterOwner = async(req, res, next) => { //해당 호칭이 캐릭터에 속한 호칭인지 확인
+const CharacterOwner = async(req, res, next) => { //해당 호칭이 캐릭터에 속한 호칭인지 확인
     try{
         const checkSql = `SELECT character_id 
                             FROM charactertbl
@@ -25,4 +25,4 @@ const characterOwner = async(req, res, next) => { //해당 호칭이 캐릭터�
     }
 }
 
-module.exports = characterOwner;
+module.exports = CharacterOwner;
