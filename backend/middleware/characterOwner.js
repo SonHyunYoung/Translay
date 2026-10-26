@@ -6,7 +6,7 @@ const CharacterOwner = async(req, res, next) => { //해당 호칭이 캐릭터�
                             FROM charactertbl
                             WHERE character_id = ? AND profile_id = ?`;
 
-        const [rows] = await pool.query(checkSql, [req.params.characterID, req.params.profileId]);
+        const [rows] = await pool.query(checkSql, [req.params.characterId, req.params.profileId]);
 
         if(rows.length === 0){
             return res.status(404).json({
