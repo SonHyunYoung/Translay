@@ -161,6 +161,12 @@ router
 
         const [userPw] = await pool.query(getSql, [uid]);
 
+        if(userPw.length === 0){
+            return res.status(404).json({
+                message : "사용자를 찾을 수 없습니다."
+            });
+        }
+
         const isMatch = await bcrypt.compare(password, userPw[0].password);
 
         if(!isMatch){
@@ -174,6 +180,7 @@ router
                             WHERE id = ?`;
 
         await pool.query(deleteSql, [uid]);
+
 
         return res.status(200).json({
             message : "회원탈퇴에 성공했습니다."
