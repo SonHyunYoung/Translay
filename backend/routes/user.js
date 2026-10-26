@@ -130,6 +130,11 @@ router
         
         await pool.query(updateSql, [hashedPw, uid]);
 
+        //refreshToken 삭제
+        const deleteSql = `DELETE FROM refresh_token
+                            WHERE uid = ? `;
+        await pool.query(deleteSql, [uid]);
+
         return res.status(200).json({
             message : "비밀번호 변경에 성공했습니다."
         });
