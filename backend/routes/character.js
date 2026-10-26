@@ -1,5 +1,7 @@
 const AuthMiddleWare = require("../middleware/auth"); //로그인 검증
- 
+const ProfileOwner = require("../middleware/profileOwner"); //프로필 검증 미들웨어
+const CharacterOwner = require("../middleware/characterOwner"); //캐릭터 검증 미들웨어
+
 const pool = require("../database/maria"); //db연결
 
 const express = require("express"); //라우터 모듈
@@ -7,26 +9,13 @@ const router = express.Router(); //라우터
 
 //캐릭터 이름 등록
 router
-.get("/:profileId", AuthMiddleWare, async(req, res) => {
+.get("/:profileId", AuthMiddleWare, ProfileOwner, async(req, res) => {
     const {profileId} = req.params;
     const {sort} = req.query;
 
     //사용자가 선택한 조건에 따라 정렬
     const orderBy = sort === "name" ? "target_name ASC" : "created_at ASC";
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-        
         //조회 sql
         const getSql = `SELECT character_id, source_name, target_name
                         FROM charactertbl
@@ -48,7 +37,7 @@ router
         });
     }
 })
-.post("/:profileId", AuthMiddleWare, async(req, res) => {
+.post("/:profileId", AuthMiddleWare, ProfileOwner, async(req, res) => {
     const {profileId} = req.params;
     const {source, target, terms} = req.body;
 
@@ -60,19 +49,6 @@ router
     }
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         //중복 체크(동명이인)
         const dupliCheckSql = `SELECT profile_id, source_name 
                                 FROM charactertbl
@@ -115,7 +91,7 @@ router
         });
     }
 })
-.patch("/:profileId/:characterId", AuthMiddleWare, async(req, res) => { //캐릭터 수정
+.patch("/:profileId/:characterId", AuthMiddleWare, ProfileOwner, async(req, res) => { //캐릭터 수정
     const {profileId, characterId} = req.params;
     const {source, target} = req.body;
 
@@ -126,19 +102,6 @@ router
     }
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         const updateSql = `UPDATE charactertbl
                             SET source_name = ?, target_name = ?, updated_at = NOW()
                             WHERE character_id = ? AND profile_id = ?`;
@@ -158,23 +121,10 @@ router
     }
 
 })
-.delete("/:profileId/:characterId", AuthMiddleWare, async(req, res) => {
+.delete("/:profileId/:characterId", AuthMiddleWare, ProfileOwner, async(req, res) => {
     const {profileId, characterId} = req.params;
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         const deleteId = `DELETE FROM charactertbl
                             WHERE character_id = ? AND profile_id = ?`
 
@@ -195,7 +145,7 @@ router
 
 //캐릭터 호칭 등록
 router
-.get("/:profileId/:characterId/term", AuthMiddleWare, async(req, res) => { //호칭 조회
+.get("/:profileId/:characterId/term", AuthMiddleWare, ProfileOwner, CharacterOwner, async(req, res) => { //호칭 조회
     const {profileId, characterId} = req.params;
     const {sort} = req.query;
 
@@ -203,19 +153,6 @@ router
     const orderBy = sort === 'name' ? 'target ASC' : 'created_at ASC';
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         //조회
         const getSql = `SELECT term_id, source, target
                         FROM charactertermtbl
@@ -237,7 +174,7 @@ router
         });
     }
 })
-.post("/:profileId/:characterId/term", AuthMiddleWare, async(req, res) =>{ //호칭 등록
+.post("/:profileId/:characterId/term", AuthMiddleWare, ProfileOwner, CharacterOwner, async(req, res) =>{ //호칭 등록
     const {profileId, characterId} = req.params;
     const {source, target} = req.body;
 
@@ -248,19 +185,6 @@ router
     }
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         //중복체크
         const dupliCheckSql = `SELECT * FROM charactertermtbl 
                                 WHERE character_id = ? AND source = ?`;
@@ -291,24 +215,11 @@ router
         });
     }
 })
-.patch("/:profileId/:characterId/terms/:termId", AuthMiddleWare, async(req, res) => { //호칭 수정
+.patch("/:profileId/:characterId/terms/:termId", AuthMiddleWare, ProfileOwner, CharacterOwner, async(req, res) => { //호칭 수정
     const {profileId, characterId, termId} = req.params;
     const {source, target} = req.body;
 
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         //수정
         const updateSql = `UPDATE charactertermtbl
                             SET source = ?, target = ?, updated_at = NOW()
@@ -328,23 +239,10 @@ router
         });
     }
 })
-.delete("/:profileId/:characterId/terms/:termId", AuthMiddleWare, async(req, res) => { //호칭 삭제
+.delete("/:profileId/:characterId/terms/:termId", AuthMiddleWare, ProfileOwner, CharacterOwner, async(req, res) => { //호칭 삭제
     const {profileId, characterId, termId} = req.params;
     
     try{
-        //프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                                    FROM profiletbl
-                                    WHERE profile_id = ? AND uid = ?`;
-        
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-        
-        if(profile.length === 0){
-            return res.status(403).json({
-                 message : "접근 권한이 없습니다."
-            });
-        }
-
         //삭제
         const deleteSql = `DELETE 
                             FROM charactertermtbl
