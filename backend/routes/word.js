@@ -121,6 +121,19 @@ router
             });
         }
 
+        //중복 체크(프론트에서 변화없으면 호출 안할 예정이긴 하지만, 혹시 모르니 일단 검증)
+        const checkDupSql = `SELECT word_id 
+                                FROM wordtbl
+                                WHERE profile_id = ? AND source = ? AND word_id != ?`;
+
+        const [dup] = pool.query(checkDupSql, [profileId, source, wordId]);
+
+        if(dup.length > 0) {
+            return res.status(400).json({
+                message : "이미 등록된 단어입니다."
+            });
+        }
+        
         //수정 
         const updateSql = `UPDATE wordtbl 
                             SET source = ?, target = ?, updated_at = NOW()
