@@ -74,6 +74,18 @@ router
             });
         }
 
+        //중복 체크
+        const dupCheckSql = `SELECT word_id FROM wordtbl
+                            WHERE profiled_id = ? AND source = ?`;
+
+        const [dup] = await pool.query(dupCheckSql, [profileId, source]);
+
+        if(dup.length > 0){
+            return res.status(400).json({
+                message : "이미 등록된 단어입니다."
+            });
+        }
+
         const insertSql = `INSERT INTO wordtbl (profile_id, source, target)
                             VALUES (?, ?, ?)`;
 
