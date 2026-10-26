@@ -1,4 +1,5 @@
 const AuthMiddleWare = require("../middleware/auth"); //로그인 인증
+const ProfileOwner = require("../middleware/profileOwner"); //프로필 검증
 
 const pool = require("../database/maria"); //db 연결
 
@@ -8,26 +9,13 @@ const router = express.Router();
 
 //고유 명사 CURD
 router
-.get("/:profileId", AuthMiddleWare, async(req, res) => { //등록한 고유 명사 조회
+.get("/:profileId", AuthMiddleWare, ProfileOwner, async(req, res) => { //등록한 고유 명사 조회
     const {profileId} = req.params;
     const {sort} = req.query;
 
     const orderBy = sort === 'name' ? 'target ASC' : 'created_at ASC'; //sql문 가져오기 등록순 혹은 가나다 순 
 
     try{
-        // 프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                            FROM profiletbl
-                            WHERE profile_id = ? AND uid = ?`;
-
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-
-        if(profile.length === 0){
-            return res.status(403).json({
-                message : "접근 권한이 없습니다."
-            });
-        }
-
         //등록 명사 조회
         const getSql = `SELECT word_id, source, target
                         FROM wordtbl 
@@ -49,7 +37,7 @@ router
         });
     }
 })  
-.post("/:profileId", AuthMiddleWare, async(req, res) => { //고유명사 등록
+.post("/:profileId", AuthMiddleWare, ProfileOwner, async(req, res) => { //고유명사 등록
     //저장할 소스
     const {profileId} = req.params;
     const {source, target} = req.body;
@@ -61,19 +49,6 @@ router
     }
 
     try{
-        // 프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                            FROM profiletbl
-                            WHERE profile_id = ? AND uid = ?`;
-
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-
-        if(profile.length === 0){
-            return res.status(403).json({
-                message : "접근 권한이 없습니다."
-            });
-        }
-
         //중복 체크
         const dupCheckSql = `SELECT word_id FROM wordtbl
                             WHERE profiled_id = ? AND source = ?`;
@@ -103,24 +78,11 @@ router
         });
     }
 })
-.patch("/:profileId/:wordId", AuthMiddleWare, async(req, res) => { //고유명사 수정
+.patch("/:profileId/:wordId", AuthMiddleWare, ProfileOwner, async(req, res) => { //고유명사 수정
     const {profileId, wordId} = req.params;
     const {source, target} = req.body;
     
     try{
-        // 프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                            FROM profiletbl
-                            WHERE profile_id = ? AND uid = ?`;
-
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-
-        if(profile.length === 0){
-            return res.status(403).json({
-                message : "접근 권한이 없습니다."
-            });
-        }
-
         //중복 체크(프론트에서 변화없으면 호출 안할 예정이긴 하지만, 혹시 모르니 일단 검증)
         const checkDupSql = `SELECT word_id 
                                 FROM wordtbl
@@ -153,23 +115,10 @@ router
         })
     }
 })
-.delete("/:profileId/:wordId", AuthMiddleWare, async(req, res) => { //고유명사 삭제
+.delete("/:profileId/:wordId", AuthMiddleWare, ProfileOwner, async(req, res) => { //고유명사 삭제
     const {profileId, wordId} = req.params;
 
     try{
-        // 프로필 검증
-        const checkSql = `SELECT profile_id, uid, name, sourcelanguage
-                            FROM profiletbl
-                            WHERE profile_id = ? AND uid = ?`;
-
-        const [profile] = await pool.query(checkSql, [profileId, req.user.id]);
-
-        if(profile.length === 0){
-            return res.status(403).json({
-                message : "접근 권한이 없습니다."
-            });
-        }
-
         //삭제
         const deleteSql = `DELETE FROM wordtbl 
                             WHERE profile_id = ? AND word_id = ?`;
