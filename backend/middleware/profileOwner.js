@@ -10,7 +10,7 @@ const ProfileOwner = async(req, res, next) => {
         const [rows] = await pool.query(checkSql, [req.params.profileId, req.user.id]);
 
         if(rows.length === 0){
-            return res.status(400).json({
+            return res.status(403).json({
                 message : "접근 권한이 없습니다."
             });
         }
