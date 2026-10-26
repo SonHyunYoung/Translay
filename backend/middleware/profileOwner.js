@@ -1,6 +1,6 @@
 const pool = require("../database/maria");
 
-const profileOwner = async(req, res, next) => {
+const ProfileOwner = async(req, res, next) => {
     try{
         //프로필 검증
         const checkSql = `SELECT profile_id 
@@ -25,4 +25,4 @@ const profileOwner = async(req, res, next) => {
     }
 }
 
-module.exports = profileOwner;
+module.exports = ProfileOwner;
