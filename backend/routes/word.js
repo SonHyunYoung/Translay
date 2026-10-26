@@ -81,6 +81,12 @@ router
 .patch("/:profileId/:wordId", AuthMiddleWare, ProfileOwner, async(req, res) => { //고유명사 수정
     const {profileId, wordId} = req.params;
     const {source, target} = req.body;
+
+    if(!source || !target){
+        return res.status(400).json({
+            message : "필수사항을 모두 입력해주세요."
+        });
+    }
     
     try{
         //중복 체크(프론트에서 변화없으면 호출 안할 예정이긴 하지만, 혹시 모르니 일단 검증)
@@ -88,7 +94,7 @@ router
                                 FROM wordtbl
                                 WHERE profile_id = ? AND source = ? AND word_id != ?`;
 
-        const [dup] = pool.query(checkDupSql, [profileId, source, wordId]);
+        const [dup] = await pool.query(checkDupSql, [profileId, source, wordId]);
 
         if(dup.length > 0) {
             return res.status(400).json({
