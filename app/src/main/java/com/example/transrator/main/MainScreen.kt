@@ -94,27 +94,28 @@ fun MainScreen(
                                     shadowElevation = 8.dp,
                                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                    modifier = Modifier.width(200.dp)
+                                    modifier = Modifier.width(240.dp)
                                 ) {
-                                    Column(Modifier.fillMaxWidth()) {
-                                        // 프로필 헤더: 왼쪽 정렬
+                                    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                        // 헤더: 아바타 + 이름 + 보조 텍스트
                                         Row(
-                                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Avatar(36, avatarColor) { Initial(profileName, 16) }
+                                            Avatar(40, avatarColor) { Initial(profileName, 18) }
                                             Spacer(Modifier.width(12.dp))
-                                            Text(
-                                                profileName, fontFamily = Pretendard, fontWeight = FontWeight.Black,
-                                                fontSize = 16.sp, maxLines = 1
-                                            )
+                                            Column {
+                                                Text(profileName, fontFamily = Pretendard, fontWeight = FontWeight.Black,
+                                                    fontSize = 16.sp, maxLines = 1)
+                                            }
                                         }
-                                        HorizontalDivider()
+                                        HorizontalDivider(Modifier.padding(vertical = 6.dp))
+
                                         PopupItem("계정 설정") { menuOpen = false; showAccount = true }
-                                        HorizontalDivider()
                                         PopupItem("프로필 변경") { menuOpen = false; onChangeProfile() }
-                                        HorizontalDivider()
-                                        PopupItem("로그아웃") { menuOpen = false; confirmLogout = true }
+
+                                        HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                                        PopupItem("로그아웃", Color(0xFFD90000)) { menuOpen = false; confirmLogout = true }
                                     }
                                 }
                             }
@@ -248,9 +249,9 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
 @Composable
 private fun PopupItem(text: String, color: Color = Color.Unspecified, onClick: () -> Unit) {
     Text(
-        text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 19.sp,
+        text, fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 16.sp,
         color = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     )
 }
