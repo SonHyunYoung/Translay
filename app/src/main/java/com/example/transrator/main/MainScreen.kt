@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.platform.LocalContext
@@ -89,27 +90,31 @@ fun MainScreen(
                                 properties = PopupProperties(focusable = true)
                             ) {
                                 Surface(
-                                    shape = RoundedCornerShape(12.dp), shadowElevation = 8.dp,
+                                    shape = RoundedCornerShape(12.dp),
+                                    shadowElevation = 8.dp,
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier.width(200.dp)
                                 ) {
-                                    Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                    Column(Modifier.fillMaxWidth()) {
+                                        // 프로필 헤더: 왼쪽 정렬
                                         Row(
-                                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Avatar(32, avatarColor) { Initial(profileName, 14) }
-                                            Spacer(Modifier.width(10.dp))
+                                            Avatar(36, avatarColor) { Initial(profileName, 16) }
+                                            Spacer(Modifier.width(12.dp))
                                             Text(
-                                                profileName, fontFamily = Pretendard,
-                                                fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1
+                                                profileName, fontFamily = Pretendard, fontWeight = FontWeight.Black,
+                                                fontSize = 16.sp, maxLines = 1
                                             )
                                         }
                                         HorizontalDivider()
                                         PopupItem("계정 설정") { menuOpen = false; showAccount = true }
+                                        HorizontalDivider()
                                         PopupItem("프로필 변경") { menuOpen = false; onChangeProfile() }
-                                        PopupItem("로그아웃", Color(0xFFD90000)) {
-                                            menuOpen = false; confirmLogout = true
-                                        }
+                                        HorizontalDivider()
+                                        PopupItem("로그아웃") { menuOpen = false; confirmLogout = true }
                                     }
                                 }
                             }
@@ -243,9 +248,9 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
 @Composable
 private fun PopupItem(text: String, color: Color = Color.Unspecified, onClick: () -> Unit) {
     Text(
-        text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 18.sp,
+        text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 19.sp,
         color = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color,
         textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp)
     )
 }
