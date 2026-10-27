@@ -28,6 +28,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.transrator.auth.accentColor
 import com.example.transrator.ui.theme.BrandBlue
+import com.example.transrator.ui.theme.BrandLight
 import com.example.transrator.ui.theme.Pretendard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -216,7 +217,7 @@ private fun RegisterDialog(
     val terms = remember { mutableStateListOf<TermRequest>() }
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
-    val dashColor = accentColor()
+    val dashColor = BrandLight
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(12.dp)) {
@@ -325,7 +326,13 @@ private fun LabeledInput(label: String, value: String, onChange: (String) -> Uni
         )
         OutlinedTextField(
             value = value, onValueChange = onChange, singleLine = true,
-            shape = RoundedCornerShape(8.dp), modifier = Modifier.weight(1f)
+            shape = RoundedCornerShape(8.dp), modifier = Modifier.weight(1f),
+
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = BrandLight,
+                focusedLabelColor = BrandLight,
+                cursorColor = BrandLight
+            )
         )
     }
 }

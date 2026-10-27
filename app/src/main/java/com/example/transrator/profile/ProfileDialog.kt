@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.transrator.auth.Logo
 import com.example.transrator.ui.theme.BrandBlue
+import com.example.transrator.ui.theme.BrandLight
 import com.example.transrator.ui.theme.Pretendard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +41,12 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                     value = s.nameInput, onValueChange = vm::onName,
                     singleLine = true, isError = s.dialogError != null,
                     placeholder = { Text("프로필 이름", fontFamily = Pretendard) },
-                    shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandLight,
+                        focusedLabelColor = BrandLight,
+                        cursorColor = BrandLight
+                    )
                 )
                 Box(Modifier.fillMaxWidth().height(20.dp)) {
                     s.dialogError?.let {

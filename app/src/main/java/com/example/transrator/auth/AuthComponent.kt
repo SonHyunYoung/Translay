@@ -21,13 +21,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.transrator.ui.theme.BrandBlue
+import com.example.transrator.ui.theme.BrandLight
 import com.example.transrator.ui.theme.Pretendard
 
 private val BrandBlueLight = Color(0xFF6C9BFF)
 
-/** 라이트에서는 브랜드색, 다크에서는 대비를 위해 밝은 파랑 (글자/링크용) */
 @Composable
-internal fun accentColor(): Color = if (isSystemInDarkTheme()) BrandBlueLight else BrandBlue
+internal fun accentColor(): Color = BrandBlue
 
 @Composable
 internal fun Logo(size: Int = 44) = Text(
@@ -141,8 +141,9 @@ internal fun FormField(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedBorderColor = accentColor()
+                    focusedBorderColor = BrandLight,
+                    focusedLabelColor = BrandLight,
+                    cursorColor = BrandLight
                 )
             )
             if (trailing != null) {
