@@ -110,7 +110,7 @@ internal fun BlueButton(text: String, onClick: () -> Unit, modifier: Modifier = 
 @Composable
 internal fun ProfileHeader(title: String, subtitle: String? = null) {
     Column(Modifier.fillMaxWidth()) {
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(0.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Logo(48) }
         Spacer(Modifier.height(10.dp))
         HorizontalDivider(Modifier.fillMaxWidth())

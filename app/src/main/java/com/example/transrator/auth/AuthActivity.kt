@@ -8,10 +8,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,63 +37,70 @@ class AuthActivity : ComponentActivity() {
 
         setContent {
             TransratorTheme {
-                Surface(Modifier.fillMaxSize()) {
-                    var startRoute by remember {
-                        mutableStateOf<String?>(
-                            when {
-                                explicitStart != null -> explicitStart
-                                tokens.refreshToken() == null -> "login"
-                                else -> null
-                            }
-                        )
-                    }
-
-                    LaunchedEffect(Unit) {
-                        if (startRoute == null) {
-                            val ok = AuthRepository(tokens).tryRefresh()
-                            startRoute = if (ok == true) "profiles" else "login"
-                        }
-                    }
-
-                    val route = startRoute
-                    if (route == null) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Logo(48)
-                        }
-                    } else {
-                        val nav = rememberNavController()
-                        NavHost(nav, startDestination = route) {
-                            composable("login") {
-                                LoginScreen(
-                                    onLoggedIn = {
-                                        nav.navigate("profiles") { popUpTo("login") { inclusive = true } }
-                                    },
-                                    onSignUp = { nav.navigate("signup") }
-                                )
-                            }
-                            composable("profiles") {
-                                BackHandler {
-                                    if (explicitStart == "profiles") {
-                                        startActivity(Intent(this@AuthActivity, MainActivity::class.java))
-                                    }
-                                    finish()
+                // 배경을 화면 전체(상태바 뒤 포함)에 먼저 칠함
+                Surface(
+                    Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    // 시스템 바 아래 + 추가 여백
+                    Box(Modifier.fillMaxSize().systemBarsPadding().padding(top = 0.dp)) {
+                        var startRoute by remember {
+                            mutableStateOf<String?>(
+                                when {
+                                    explicitStart != null -> explicitStart
+                                    tokens.refreshToken() == null -> "login"
+                                    else -> null
                                 }
-                                ProfileSelectScreen(
-                                    onSelected = {
-                                        startActivity(Intent(this@AuthActivity, MainActivity::class.java))
+                            )
+                        }
+
+                        LaunchedEffect(Unit) {
+                            if (startRoute == null) {
+                                val ok = AuthRepository(tokens).tryRefresh()
+                                startRoute = if (ok == true) "profiles" else "login"
+                            }
+                        }
+
+                        val route = startRoute
+                        if (route == null) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Logo(48)
+                            }
+                        } else {
+                            val nav = rememberNavController()
+                            NavHost(nav, startDestination = route) {
+                                composable("login") {
+                                    LoginScreen(
+                                        onLoggedIn = {
+                                            nav.navigate("profiles") { popUpTo("login") { inclusive = true } }
+                                        },
+                                        onSignUp = { nav.navigate("signup") }
+                                    )
+                                }
+                                composable("profiles") {
+                                    BackHandler {
+                                        if (explicitStart == "profiles") {
+                                            startActivity(Intent(this@AuthActivity, MainActivity::class.java))
+                                        }
                                         finish()
-                                    },
-                                    onEdit = { nav.navigate("profileEdit") }
-                                )
-                            }
-                            composable("profileEdit") {
-                                ProfileEditScreen(onDone = { nav.popBackStack() })
-                            }
-                            composable("signup") {
-                                SignUpScreen(
-                                    onBack = { nav.popBackStack() },
-                                    onSignedUp = { nav.popBackStack() }
-                                )
+                                    }
+                                    ProfileSelectScreen(
+                                        onSelected = {
+                                            startActivity(Intent(this@AuthActivity, MainActivity::class.java))
+                                            finish()
+                                        },
+                                        onEdit = { nav.navigate("profileEdit") }
+                                    )
+                                }
+                                composable("profileEdit") {
+                                    ProfileEditScreen(onDone = { nav.popBackStack() })
+                                }
+                                composable("signup") {
+                                    SignUpScreen(
+                                        onBack = { nav.popBackStack() },
+                                        onSignedUp = { nav.popBackStack() }
+                                    )
+                                }
                             }
                         }
                     }

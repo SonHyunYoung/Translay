@@ -70,7 +70,7 @@ fun MainScreen(
     Scaffold(
         topBar = {
             Column {
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(40.dp))
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically

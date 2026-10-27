@@ -31,7 +31,7 @@ internal fun accentColor(): Color = if (isSystemInDarkTheme()) BrandBlueLight el
 
 @Composable
 internal fun Logo(size: Int = 44) = Text(
-    "Translay", color = accentColor(), fontFamily = Pretendard,
+    "Translay", color = BrandBlue, fontFamily = Pretendard,
     fontWeight = FontWeight.Black, fontSize = size.sp
 )
 
