@@ -41,14 +41,8 @@ fun SignUpScreen(
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.padding(top = 8.dp)) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack, "뒤로",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text("회원가입", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 32.sp, color = accentColor())
+        Spacer(Modifier.height(16.dp))   // 상단 여백 (원하는 높이로 조절)
+        Text("회원가입", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 32.sp, color = BrandBlue)
         Spacer(Modifier.height(6.dp))
         Text(
             "회원가입을 통해 Translay의 실시간 번역을 경험해보세요!", fontFamily = Pretendard, fontSize = 13.sp,
