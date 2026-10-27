@@ -65,7 +65,7 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
     var deleteError by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Section("계정")
+        Section("계정 설정")
         Column(Modifier.padding(horizontal = 24.dp)) {
             // 이메일은 읽기 전용
             OutlinedTextField(
@@ -100,7 +100,9 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
         }
 
         Spacer(Modifier.height(24.dp))
+        HorizontalDivider()
 
+        Section("회원 탈퇴")
         // 회원 탈퇴 (설정 변경 버튼 위)
         Button(
             onClick = { deletePw = ""; deleteError = null; showDelete = true },
@@ -113,8 +115,10 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
             Text("회원 탈퇴", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp)
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider()
 
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = {
                 vm.save {
