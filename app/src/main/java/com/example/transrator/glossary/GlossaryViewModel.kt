@@ -108,11 +108,18 @@ class GlossaryViewModel(app: Application) : AndroidViewModel(app) {
     fun saveDetail(onDone: () -> Unit) {
         val s = _s.value
         val c = s.detail ?: return
-        if (s.editSource.isBlank() || s.editTarget.isBlank()) {
+        val src = s.editSource.trim()
+        val tgt = s.editTarget.trim()
+
+        if (src.isBlank() || tgt.isBlank()) {
             _s.value = s.copy(message = "이름과 번역을 입력해주세요."); return
         }
+        // 변경 없음: 서버 호출 없이 종료
+        if (src == c.source_name && tgt == c.target_name) {
+            closeDetail(); return
+        }
         viewModelScope.launch {
-            repo.updateCharacter(c.character_id, s.editSource.trim(), s.editTarget.trim())
+            repo.updateCharacter(c.character_id, src, tgt)
                 .onSuccess { onDone(); closeDetail() }
                 .onFailure(::fail)
         }

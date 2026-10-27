@@ -49,6 +49,7 @@ class OverlayService : Service() {
             setBackgroundColor(Color.argb(alpha, Color.red(st.bgColor), Color.green(st.bgColor), Color.blue(st.bgColor)))
             setTextColor(st.textColor)
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, st.fontSize.toFloat())
+
             val base = when (st.fontKey) {
                 "sans" -> Typeface.SANS_SERIF
                 "serif" -> Typeface.SERIF
@@ -56,6 +57,12 @@ class OverlayService : Service() {
                 else -> Typeface.DEFAULT
             }
             typeface = Typeface.create(base, if (st.bold) Typeface.BOLD else Typeface.NORMAL)
+
+            typeface = Typeface.create(base, if (st.bold) Typeface.BOLD else Typeface.NORMAL)
+
+            setPadding(24, 16, 24, 16)
+            text = ""
+            visibility = View.GONE
         }
         overlayView = textView
 

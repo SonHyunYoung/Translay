@@ -122,8 +122,8 @@ fun MainScreen(
             NavigationBar {
                 tabs.forEachIndexed { i, t ->
                     NavigationBarItem(
-                        selected = tab == i,
-                        onClick = { tab = i },
+                        selected = !showAccount && tab == i,       // 계정 화면일 땐 어떤 탭도 선택 표시 안 함
+                        onClick = { showAccount = false; tab = i },  // 계정 화면 닫고 탭 이동
                         icon = { Icon(if (tab == i) t.selectedIcon else t.icon, t.label) },
                         label = { Text(t.label, fontFamily = Pretendard, fontSize = 12.sp) },
                         colors = NavigationBarItemDefaults.colors(
@@ -202,9 +202,9 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
             )
             Spacer(Modifier.height(18.dp))
             listOf(
-                "번역 시작 버튼을 누르고 화면 캡처를 허용해주세요.",
-                "게임에 접속해 번역할 스토리를 열어주세요.",
-                "화면 오른쪽 위의 '시작' 버튼을 눌러 번역을 시작하세요."
+                "번역 시작 버튼을 누르고 화면 캡처를 허용합니다.",
+                "게임에 접속 후 번역을 원하는 스토리를 열람합니다.",
+                "'시작' 버튼을 클릭하면 번역이 시작됩니다.",
             ).forEachIndexed { i, step ->
                 Row(Modifier.padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {   // 8dp → 14dp
                     Box(
@@ -231,8 +231,7 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
         HorizontalDivider()
         Spacer(Modifier.height(12.dp))
         Text(
-            "본 앱은 AI 번역 결과를 사용합니다. AI 번역은 정확하지 않을 수 있습니다.\n" +
-                    "\n본 앱은 비주얼 노벨류의 게임에서의 사용을 상정하고 만들어져 있습니다.",
+            "본 앱은 AI 번역 결과를 사용합니다. AI 번역은 정확하지 않을 수 있습니다.\n" ,
             fontFamily = Pretendard, fontSize = 13.sp, lineHeight = 19.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()

@@ -388,4 +388,7 @@ object CaptureResult {
 
     // OverlayService → CaptureService로 "탭했다" 알리는 신호
     val resumeSignal = MutableStateFlow(0)
+
+    // 설정 화면 → CaptureService로 "영역 지정 화면 띄워라" 알리는 신호
+    val pickRegionSignal = MutableStateFlow(0)
 }

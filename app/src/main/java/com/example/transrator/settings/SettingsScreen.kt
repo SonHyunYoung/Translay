@@ -23,7 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.transrator.auth.accentColor
+import com.example.transrator.capture.CaptureResult
 import com.example.transrator.data.local.SettingsManager
+import com.example.transrator.data.local.TogglePos
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.Pretendard
 
@@ -122,6 +124,7 @@ fun SettingsScreen(onDone: () -> Unit) {
     var bgColor by remember { mutableIntStateOf(initial.bgColor) }
     var bgAlpha by remember { mutableFloatStateOf(initial.bgAlpha.toFloat()) }
     var textColor by remember { mutableIntStateOf(initial.textColor) }
+    var togglePos by remember { mutableStateOf(initial.togglePos) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         // 미리보기
@@ -134,7 +137,7 @@ fun SettingsScreen(onDone: () -> Unit) {
         ) {
             val previewSp = with(density) { sizePx.toDp().value }.sp
             Text(
-                "이 문장은 번역 오버레이에 표시되는 글씨 미리보기입니다.",
+                "번역 오버레이 표기 예시입니다.",
                 color = Color(textColor),
                 fontFamily = fontFamilyFor(fontKey),
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
@@ -190,11 +193,46 @@ fun SettingsScreen(onDone: () -> Unit) {
 
         Spacer(Modifier.height(16.dp))
         HorizontalDivider()
+
+        // ---- 토글 버튼 위치 ----
+        SectionTitle("토글 버튼 위치")
+        Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(
+                listOf(TogglePos.TOP_LEFT, TogglePos.TOP_RIGHT),
+                listOf(TogglePos.BOTTOM_LEFT, TogglePos.BOTTOM_RIGHT)
+            ).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { pos ->
+                        val sel = togglePos == pos.name
+                        OutlinedButton(
+                            onClick = { togglePos = pos.name },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (sel) BrandBlue else Color.Transparent,
+                                contentColor = if (sel) Color.White else MaterialTheme.colorScheme.onSurface
+                            )
+                        ) { Text(pos.label, fontFamily = Pretendard, fontSize = 14.sp) }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider()
         Spacer(Modifier.height(20.dp))
 
         // ---- 버튼 ----
         Button(
-            onClick = { Toast.makeText(context, "번역 영역 설정은 준비 중이에요.", Toast.LENGTH_SHORT).show() },
+            onClick = {
+                if (CaptureResult.running.value) {
+                    CaptureResult.pickRegionSignal.value += 1
+                } else {
+                    Toast.makeText(
+                        context, "메인에서 번역 시작을 눌러 화면 캡처 허용이 필요합니다.", Toast.LENGTH_LONG
+                    ).show()
+                }
+            },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
@@ -203,13 +241,15 @@ fun SettingsScreen(onDone: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Button(
             onClick = {
+                val latest = manager.load()   // 저장 시점의 최신 값(영역 지정 결과 보존)
                 manager.save(
-                    initial.copy(
+                    latest.copy(
                         fontKey = fontKey, bold = bold, fontSize = sizePx,
-                        bgColor = bgColor, bgAlpha = bgAlpha.toInt(), textColor = textColor
+                        bgColor = bgColor, bgAlpha = bgAlpha.toInt(), textColor = textColor,
+                        togglePos = togglePos
                     )
                 )
-                Toast.makeText(context, "설정이 저장되었어요.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "설정이 저장되었습니다.", Toast.LENGTH_SHORT).show()
                 onDone()
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
