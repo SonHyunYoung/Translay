@@ -16,6 +16,7 @@ data class GlossaryUiState(
     val sortByName: Boolean = false,       // false 등록순, true 가나다순
     val characters: List<GlossaryCharacter> = emptyList(),
     val words: List<Word> = emptyList(),
+    val wordDetail: Word? = null,
     val loading: Boolean = false,
     val message: String? = null,
     val dialog: String? = null,            // null 닫힘, "main" 등록, "term" 호칭 등록
@@ -121,6 +122,37 @@ class GlossaryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.updateCharacter(c.character_id, src, tgt)
                 .onSuccess { onDone(); closeDetail() }
+                .onFailure(::fail)
+        }
+    }
+
+    fun openWordDetail(w: Word) {
+        _s.value = _s.value.copy(
+            wordDetail = w, editSource = w.source, editTarget = w.target, message = null
+        )
+    }
+
+    fun closeWordDetail() {
+        _s.value = _s.value.copy(wordDetail = null, message = null)
+        load()
+    }
+
+    fun saveWordDetail(onDone: () -> Unit) {
+        val s = _s.value
+        val w = s.wordDetail ?: return
+        val src = s.editSource.trim()
+        val tgt = s.editTarget.trim()
+
+        if (src.isBlank() || tgt.isBlank()) {
+            _s.value = s.copy(message = "원문과 번역을 입력해주세요."); return
+        }
+        // 변경 없음: 서버 호출 없이 종료
+        if (src == w.source && tgt == w.target) {
+            closeWordDetail(); return
+        }
+        viewModelScope.launch {
+            repo.updateWord(w.word_id, src, tgt)
+                .onSuccess { onDone(); closeWordDetail() }
                 .onFailure(::fail)
         }
     }

@@ -45,13 +45,20 @@ internal fun SmallBlueButton(text: String, modifier: Modifier = Modifier, onClic
 fun GlossaryTab(vm: GlossaryViewModel = viewModel()) {
     val s by vm.state.collectAsState()
 
-    if (s.detail != null) {
-        BackHandler { vm.closeDetail() }
-        CharacterDetailScreen(s, vm)
-    } else {
-        GlossaryList(s, vm)
+    // 화면 분기 (하나만)
+    when {
+        s.detail != null -> {
+            BackHandler { vm.closeDetail() }
+            CharacterDetailScreen(s, vm)
+        }
+        s.wordDetail != null -> {
+            BackHandler { vm.closeWordDetail() }
+            WordDetailScreen(s, vm)
+        }
+        else -> GlossaryList(s, vm)
     }
 
+    // 등록 모달 (고유명사/호칭)
     when (s.dialog) {
         "main" -> RegisterDialog(
             title = "고유 명사 등록", allowTerms = s.category == 0,
@@ -65,6 +72,7 @@ fun GlossaryTab(vm: GlossaryViewModel = viewModel()) {
         )
     }
 
+    // 삭제 확인
     s.deleteTarget?.let { t ->
         AlertDialog(
             onDismissRequest = vm::cancelDelete,
@@ -159,7 +167,8 @@ private fun GlossaryList(s: GlossaryUiState, vm: GlossaryViewModel) {
                 } else {
                     items(s.words, key = { it.word_id }) { w ->
                         ItemRow(
-                            title = w.target, sub = w.source, onClick = null,
+                            title = w.target, sub = w.source,
+                            onClick = { vm.openWordDetail(w) },
                             onDelete = { vm.askDelete(DeleteTarget(DeleteKind.WORD, w.word_id, w.source)) }
                         )
                     }

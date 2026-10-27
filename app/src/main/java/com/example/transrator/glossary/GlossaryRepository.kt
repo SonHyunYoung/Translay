@@ -38,4 +38,7 @@ class GlossaryRepository(private val tokens: TokenManager) {
     } catch (e: Exception) {
         Result.failure(Exception("서버에 연결할 수 없습니다."))
     }
+
+    suspend fun updateWord(wid: Int, src: String, tgt: String) =
+        call { api.updateWord(auth(), pid(), wid, WordRequest(src, tgt)); Unit }
 }

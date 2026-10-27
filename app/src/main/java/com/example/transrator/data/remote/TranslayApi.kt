@@ -81,6 +81,8 @@ interface TranslayApi {
     suspend fun getWords(@Header("Authorization") t: String, @Path("pid") pid: Int, @Query("sort") sort: String?): WordListResponse
     @POST("api/word/{pid}")
     suspend fun createWord(@Header("Authorization") t: String, @Path("pid") pid: Int, @Body b: WordRequest): MessageResponse
+    @PATCH("api/word/{pid}/{wid}")
+    suspend fun updateWord(@Header("Authorization") t: String, @Path("pid") pid: Int, @Path("wid") wid: Int, @Body b: WordRequest): MessageResponse
     @DELETE("api/word/{pid}/{wid}")
     suspend fun deleteWord(@Header("Authorization") t: String, @Path("pid") pid: Int, @Path("wid") wid: Int): MessageResponse
 
