@@ -286,12 +286,8 @@ private fun RegisterDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(
-                                    Icons.Filled.Add, contentDescription = null,
-                                    tint = dashColor, modifier = Modifier.size(22.dp)
-                                )
                                 Text(
-                                    " 호칭 추가", color = dashColor, fontFamily = Pretendard,
+                                    "+ 호칭 추가", color = dashColor, fontFamily = Pretendard,
                                     fontWeight = FontWeight.Black, fontSize = 18.sp
                                 )
                             }
