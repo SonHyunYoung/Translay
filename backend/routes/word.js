@@ -51,7 +51,7 @@ router
     try{
         //중복 체크
         const dupCheckSql = `SELECT word_id FROM wordtbl
-                            WHERE profiled_id = ? AND source = ?`;
+                            WHERE profile_id = ? AND source = ?`;
 
         const [dup] = await pool.query(dupCheckSql, [profileId, source]);
 
