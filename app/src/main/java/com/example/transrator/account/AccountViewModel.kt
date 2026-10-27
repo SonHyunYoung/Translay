@@ -94,4 +94,13 @@ class AccountViewModel(app: Application) : AndroidViewModel(app) {
             onDone()
         }
     }
+
+    fun deleteAccount(password: String, onDone: () -> Unit, onError: (String) -> Unit) {
+        if (password.isBlank()) { onError("비밀번호를 입력해주세요."); return }
+        viewModelScope.launch {
+            repo.deleteAccount(password)
+                .onSuccess { onDone() }
+                .onFailure { onError(it.message ?: "탈퇴에 실패했습니다.") }
+        }
+    }
 }

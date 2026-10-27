@@ -55,7 +55,8 @@ fun MainScreen(
     onStart: () -> Unit,
     onStop: () -> Unit,
     onChangeProfile: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val context = LocalContext.current
     var tab by remember { mutableIntStateOf(0) }
@@ -138,7 +139,7 @@ fun MainScreen(
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             if (showAccount) {
-                AccountScreen(onDone = { showAccount = false; tab = 0 })
+                AccountScreen(onDone = { showAccount = false; tab = 0 }, onDeleted = onDeleted)
             } else when (tab) {
                 0 -> HomeTab(running, onStart, onStop)
                 1 -> GlossaryTab()

@@ -27,4 +27,7 @@ class AccountRepository(private val tokens: TokenManager) {
     } catch (e: Exception) {
         Result.failure(Exception("서버에 연결할 수 없습니다."))
     }
+
+    suspend fun deleteAccount(password: String) =
+        call { api.deleteAccount(auth(), DeleteAccountRequest(password)); Unit }
 }

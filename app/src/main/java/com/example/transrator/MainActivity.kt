@@ -26,6 +26,7 @@ import com.example.transrator.capture.CaptureResult
 import com.example.transrator.capture.CaptureService
 import com.example.transrator.capture.OverlayService
 import com.example.transrator.data.local.ThemeManager
+import com.example.transrator.data.local.TokenManager
 import com.example.transrator.main.MainScreen
 import com.example.transrator.main.MainViewModel
 import com.example.transrator.profile.avatarColor
@@ -92,7 +93,14 @@ class MainActivity : ComponentActivity() {
                                             Intent.FLAG_ACTIVITY_CLEAR_TASK
                                 })
                             }
-                        }
+                        },
+                        onDeleted = {
+                            stopTranslate()
+                            TokenManager(this).clear()
+                            startActivity(Intent(this, AuthActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            })
+                        },
                     )
                 }
             }

@@ -1,5 +1,6 @@
 package com.example.transrator.data.remote
 
+import com.example.transrator.account.DeleteAccountRequest
 import com.example.transrator.account.MyPageResponse
 import com.example.transrator.account.NameRequest
 import com.example.transrator.account.PasswordRequest
@@ -23,6 +24,7 @@ import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.DELETE
+import retrofit2.http.HTTP
 import retrofit2.http.Query
 import retrofit2.http.Path
 
@@ -94,6 +96,9 @@ interface TranslayApi {
 
     @PATCH("api/user/mypage/password")
     suspend fun updatePassword(@Header("Authorization") t: String, @Body b: PasswordRequest): MessageResponse
+
+    @HTTP(method = "DELETE", path = "api/user/mypage", hasBody = true)
+    suspend fun deleteAccount(@Header("Authorization") t: String, @Body b: DeleteAccountRequest): MessageResponse
 
 }
 
