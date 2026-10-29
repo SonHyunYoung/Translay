@@ -30,6 +30,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import com.example.transrator.account.AccountScreen
 import com.example.transrator.auth.Logo
 import com.example.transrator.auth.accentColor
@@ -155,19 +156,40 @@ fun MainScreen(
     }
 
     if (confirmLogout) {
-        AlertDialog(
-            onDismissRequest = { confirmLogout = false },
-            title = { Text("로그아웃", fontFamily = Pretendard, fontWeight = FontWeight.Bold) },
-            text = { Text("로그아웃 하시겠습니까?", fontFamily = Pretendard) },
-            confirmButton = {
-                TextButton(onClick = { confirmLogout = false; onLogout() }) {
-                    Text("로그아웃", color = Color(0xFFD90000), fontFamily = Pretendard)
+        Dialog(onDismissRequest = { confirmLogout = false }) {
+            Surface(shape = RoundedCornerShape(12.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        "로그아웃", color = accentColor(), fontFamily = Pretendard,
+                        fontWeight = FontWeight.Black, fontSize = 22.sp,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                    Text(
+                        "로그아웃하시겠습니까?",
+                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = { confirmLogout = false },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("취소", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = { confirmLogout = false; onLogout() },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandBlue, contentColor = Color.White
+                            )
+                        ) { Text("로그아웃", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmLogout = false }) { Text("취소", fontFamily = Pretendard) }
             }
-        )
+        }
     }
 }
 
