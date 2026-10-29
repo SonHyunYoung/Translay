@@ -216,7 +216,7 @@ fun SettingsScreen(onDone: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         HorizontalDivider()
 
         SectionTitle("번역 표시 영역 설정")
@@ -236,7 +236,7 @@ fun SettingsScreen(onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
         ) { Text("번역 영역 설정", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         HorizontalDivider()
         Spacer(Modifier.height(20.dp))
 
