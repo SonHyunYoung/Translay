@@ -75,17 +75,46 @@ fun GlossaryTab(vm: GlossaryViewModel = viewModel()) {
 
     // 삭제 확인
     s.deleteTarget?.let { t ->
-        AlertDialog(
-            onDismissRequest = vm::cancelDelete,
-            title = { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) },
-            text = { Text("'${t.label}'을(를) 삭제하시겠습니까?", fontFamily = Pretendard) },
-            confirmButton = {
-                TextButton(onClick = vm::confirmDelete) {
-                    Text("삭제", color = Color(0xFFD90000), fontFamily = Pretendard)
+        val kindLabel = when (t.kind) {
+            DeleteKind.CHARACTER -> "캐릭터"
+            DeleteKind.WORD -> "고유명사"
+            DeleteKind.TERM -> "호칭"
+        }
+        Dialog(onDismissRequest = vm::cancelDelete) {
+            Surface(shape = RoundedCornerShape(12.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        "$kindLabel 삭제", color = accentColor(), fontFamily = Pretendard,
+                        fontWeight = FontWeight.Black, fontSize = 22.sp,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                    Text(
+                        "'${t.label}'을(를) 삭제하시겠습니까?" +
+                                if (t.kind == DeleteKind.CHARACTER) "\n등록된 호칭도 함께 삭제됩니다." else "",
+                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = vm::cancelDelete,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("취소", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = vm::confirmDelete,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD90000), contentColor = Color.White
+                            )
+                        ) { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                    }
                 }
-            },
-            dismissButton = { TextButton(onClick = vm::cancelDelete) { Text("취소", fontFamily = Pretendard) } }
-        )
+            }
+        }
     }
 }
 
