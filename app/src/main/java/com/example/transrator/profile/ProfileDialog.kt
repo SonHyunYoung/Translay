@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.transrator.auth.Logo
+import com.example.transrator.auth.accentColor
 import com.example.transrator.ui.theme.BrandBlue
 import com.example.transrator.ui.theme.BrandLight
 import com.example.transrator.ui.theme.Pretendard
@@ -25,7 +26,11 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
     Dialog(onDismissRequest = { if (!s.saving) vm.closeDialog() }) {
         Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Logo(28)
+                Text(
+                    if (isEdit) "프로필 편집" else "프로필 추가",
+                    color = accentColor(), fontFamily = Pretendard,
+                    fontWeight = FontWeight.Black, fontSize = 30.sp
+                )
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider(Modifier.fillMaxWidth())
                 Spacer(Modifier.height(16.dp))
@@ -48,6 +53,10 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                         cursorColor = BrandLight
                     )
                 )
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+
                 Box(Modifier.fillMaxWidth().height(20.dp)) {
                     s.dialogError?.let {
                         Text(
@@ -58,11 +67,9 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
-
                 Text(
-                    "원문 언어", fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 13.sp,
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp)
+                    "원문 언어", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 20.sp,   // 13 → 17
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp)
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("ja" to "일본어", "zh" to "중국어", "en" to "영어").forEach { (code, label) ->
@@ -70,10 +77,10 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                         FilterChip(
                             selected = selected,
                             onClick = { vm.onLang(code) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).height(40.dp),            // 높이 추가
                             label = {
                                 Text(
-                                    label, fontFamily = Pretendard, fontSize = 13.sp,
+                                    label, fontFamily = Pretendard, fontSize = 16.sp,   // 13 → 16
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.fillMaxWidth()
@@ -92,21 +99,37 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                     }
                 }
 
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
                 Spacer(Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     if (isEdit) {
                         Button(
                             onClick = vm::askDelete, enabled = !s.saving,
+                            modifier = Modifier.height(45.dp),
                             shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFD90000), contentColor = Color.White
                             )
-                        ) { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                        ) { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
                     }
-                    Spacer(Modifier.weight(1f))
-                    BlueButton("취소", { if (!s.saving) vm.closeDialog() })
+                    Spacer(Modifier.weight(1f))   // 남는 공간 → 취소/저장을 오른쪽으로
+                    Button(
+                        onClick = { if (!s.saving) vm.closeDialog() },
+                        modifier = Modifier.height(45.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
+                    ) { Text("취소", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
                     Spacer(Modifier.width(8.dp))
-                    BlueButton("저장", { vm.save() })
+                    Button(
+                        onClick = { vm.save() },
+                        modifier = Modifier.height(45.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
+                    ) { Text("저장", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
                 }
             }
         }
