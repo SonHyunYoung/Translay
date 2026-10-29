@@ -25,7 +25,7 @@ fun ProfileSelectScreen(
         ProfileHeader("프로필 선택", "접속할 프로필을 선택해주십시오.")
         if (s.loading) CircularProgressIndicator()
         s.message?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp)
+            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 17.sp)
         }
         ProfileGrid(s, showAdd = true, onProfile = { vm.select(it); onSelected() }, onAdd = { vm.openCreate() })
         Spacer(Modifier.height(40.dp))

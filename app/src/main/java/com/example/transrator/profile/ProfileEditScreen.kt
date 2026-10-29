@@ -22,10 +22,10 @@ fun ProfileEditScreen(onDone: () -> Unit, vm: ProfileViewModel = viewModel()) {
     val s by vm.state.collectAsState()
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        ProfileHeader("프로필 편집", "편집/삭제할 프로필을 선택해주세요")
+        ProfileHeader("프로필 편집", "편집/삭제하고 싶은 프로필을 선택해주십시오.")
         if (s.loading) CircularProgressIndicator()
         s.message?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp)
+            Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 17.sp)
         }
         ProfileGrid(s, showAdd = false, onProfile = { vm.openEdit(it) }, onAdd = {})
         Spacer(Modifier.height(32.dp))
