@@ -136,21 +136,39 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
     }
 
     if (s.confirmDelete) {
-        AlertDialog(
-            onDismissRequest = vm::cancelDelete,
-            title = { Text("프로필 삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    "정말 이 프로필을 삭제하시겠습니까?\n등록한 캐릭터, 호칭, 단어도 함께 삭제되며 되돌릴 수 없어요.",
-                    fontFamily = Pretendard
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = vm::delete) {
-                    Text("삭제", color = Color(0xFFD90000), fontFamily = Pretendard)
+        Dialog(onDismissRequest = vm::cancelDelete) {
+            Surface(shape = RoundedCornerShape(12.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        "프로필 삭제", color = accentColor(), fontFamily = Pretendard,
+                        fontWeight = FontWeight.Black, fontSize = 22.sp,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                    Text(
+                        "정말 이 프로필을 삭제하시겠습니까?\n\n    등록한 캐릭터, 호칭, 단어가 모두 삭제되며 복구할 수 없습니다.",
+                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = vm::cancelDelete,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("취소", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = vm::delete,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD90000), contentColor = Color.White
+                            )
+                        ) { Text("삭제", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                    }
                 }
-            },
-            dismissButton = { TextButton(onClick = vm::cancelDelete) { Text("취소", fontFamily = Pretendard) } }
-        )
+            }
+        }
     }
 }
