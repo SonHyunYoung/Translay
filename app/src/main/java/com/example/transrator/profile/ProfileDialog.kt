@@ -146,7 +146,7 @@ internal fun ProfileDialog(s: ProfileUiState, vm: ProfileViewModel) {
                     )
                     HorizontalDivider(Modifier.padding(vertical = 12.dp))
                     Text(
-                        "정말 이 프로필을 삭제하시겠습니까?\n\n    등록한 캐릭터, 호칭, 단어가 모두 삭제되며 복구할 수 없습니다.",
+                        "정말 이 프로필을 삭제하시겠습니까?\n\n등록한 캐릭터, 호칭, 단어가 모두 삭제되며 복구할 수 없습니다.",
                         fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                         textAlign = TextAlign.Left,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
