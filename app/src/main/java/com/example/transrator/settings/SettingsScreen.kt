@@ -218,8 +218,8 @@ fun SettingsScreen(onDone: () -> Unit) {
         }
         Spacer(Modifier.height(16.dp))
         HorizontalDivider()
-        Spacer(Modifier.height(20.dp))
 
+        SectionTitle("번역 표시 영역 설정")
         // ---- 버튼 ----
         Button(
             onClick = {
@@ -236,7 +236,10 @@ fun SettingsScreen(onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
         ) { Text("번역 영역 설정", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(20.dp))
+
         Button(
             onClick = {
                 val latest = manager.load()   // 저장 시점의 최신 값(영역 지정 결과 보존)
@@ -253,7 +256,9 @@ fun SettingsScreen(onDone: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
-        ) { Text("설정 완료", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
+        )
+
+        { Text("설정 완료", fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
         Spacer(Modifier.height(24.dp))
     }
 }
