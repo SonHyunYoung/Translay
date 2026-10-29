@@ -191,7 +191,7 @@ private fun GlossaryList(s: GlossaryUiState, vm: GlossaryViewModel) {
                         ItemRow(
                             title = c.target_name, sub = c.source_name,
                             onClick = { vm.openDetail(c) },
-                            onDelete = { vm.askDelete(DeleteTarget(DeleteKind.CHARACTER, c.character_id, c.source_name)) }
+                            onDelete = { vm.askDelete(DeleteTarget(DeleteKind.CHARACTER, c.character_id, c.target_name)) }
                         )
                     }
                 } else {
@@ -199,7 +199,7 @@ private fun GlossaryList(s: GlossaryUiState, vm: GlossaryViewModel) {
                         ItemRow(
                             title = w.target, sub = w.source,
                             onClick = { vm.openWordDetail(w) },
-                            onDelete = { vm.askDelete(DeleteTarget(DeleteKind.WORD, w.word_id, w.source)) }
+                            onDelete = { vm.askDelete(DeleteTarget(DeleteKind.WORD, w.word_id, w.target)) }
                         )
                     }
                 }
