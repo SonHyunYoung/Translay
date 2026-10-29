@@ -60,7 +60,7 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
     val context = LocalContext.current
     val themeMode by ThemeManager.mode.collectAsState()
 
-    var showDelete by remember { mutableStateOf(false) }
+    var deleteStep by remember { mutableIntStateOf(0) }
     var deletePw by remember { mutableStateOf("") }
     var deleteError by remember { mutableStateOf<String?>(null) }
 
@@ -103,9 +103,10 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
         HorizontalDivider()
 
         Section("회원 탈퇴")
+
         // 회원 탈퇴 (설정 변경 버튼 위)
         Button(
-            onClick = { deletePw = ""; deleteError = null; showDelete = true },
+            onClick = { deletePw = ""; deleteError = null; deleteStep = 1 },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
@@ -137,8 +138,8 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
         Spacer(Modifier.height(24.dp))
     }
 
-    if (showDelete) {
-        Dialog(onDismissRequest = { showDelete = false }) {
+    if (deleteStep == 1) {
+        Dialog(onDismissRequest = { deleteStep = 0 }) {
             Surface(shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
@@ -147,31 +148,72 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
                     )
                     HorizontalDivider(Modifier.padding(vertical = 12.dp))
-
                     Text(
-                        "회원 탈퇴를 하면 프로필, 고유명사 등 모든 데이터가 삭제되며 되돌릴 수 없어요.",
-                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                        "탈퇴 시 등록된 프로필, 고유명사 등 모든 데이터가 삭제되며 복구할 수 없습니다.\n\n정말 탈퇴하시겠습니까?",
+                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = { deleteStep = 0 },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("취소", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = { deleteStep = 2 },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD90000), contentColor = Color.White
+                            )
+                        ) { Text("계속", fontFamily = Pretendard, fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
+        }
+    }
 
+    if (deleteStep == 2) {
+        Dialog(onDismissRequest = { deleteStep = 0 }) {
+            Surface(shape = RoundedCornerShape(12.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        "회원탈퇴", color = accentColor(), fontFamily = Pretendard,
+                        fontWeight = FontWeight.Black, fontSize = 22.sp,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                    Text(
+                        "본인 확인을 위해 비밀번호를 입력해주세요.",
+                        fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                    )
                     FormField(
                         deletePw, { deletePw = it; deleteError = null },
                         placeholder = "비밀번호 입력", isPassword = true, error = deleteError
                     )
-
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = {
-                            vm.deleteAccount(deletePw, { showDelete = false; onDeleted() }, { deleteError = it })
+                            vm.deleteAccount(
+                                deletePw,
+                                {
+                                    deleteStep = 0
+                                    Toast.makeText(context, "회원 탈퇴가 성공적으로 처리되었습니다.", Toast.LENGTH_LONG).show()
+                                    onDeleted()
+                                },
+                                { deleteError = it }
+                            )
                         },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFD90000), contentColor = Color.White
                         )
-                    ) {
-                        Text("회원 탈퇴", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    }
+                    ) { Text("회원 탈퇴", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 20.sp) }
                 }
             }
         }
