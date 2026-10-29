@@ -192,8 +192,8 @@ fun SettingsScreen(onDone: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         HorizontalDivider()
 
-        // ---- 토글 버튼 위치 ----
-        SectionTitle("토글 버튼 위치")
+        // ---- 번역 버튼 위치 ----
+        SectionTitle("번역 버튼 위치")
         Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             listOf(
                 listOf(TogglePos.TOP_LEFT, TogglePos.TOP_RIGHT),
@@ -227,7 +227,7 @@ fun SettingsScreen(onDone: () -> Unit) {
                     CaptureResult.pickRegionSignal.value += 1
                 } else {
                     Toast.makeText(
-                        context, "메인에서 번역 시작을 눌러 화면 캡처 허용이 필요합니다.", Toast.LENGTH_LONG
+                        context, "메인 페이지에서 번역 시작 버튼을 눌러 화면 캡처 허용이 필요합니다.", Toast.LENGTH_LONG
                     ).show()
                 }
             },
