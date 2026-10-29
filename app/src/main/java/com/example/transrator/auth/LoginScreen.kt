@@ -63,16 +63,16 @@ fun LoginScreen(
         // 로그인 버튼 밑: 회원가입 | 비밀번호 찾기
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "회원가입", fontFamily = Pretendard, fontSize = 13.sp,
+                "회원가입", fontFamily = Pretendard, fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.clickable(onClick = onSignUp).padding(8.dp)
             )
             Text(
-                "|", fontSize = 13.sp,
+                "|", fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                "비밀번호 찾기", fontFamily = Pretendard, fontSize = 13.sp,
+                "비밀번호 찾기", fontFamily = Pretendard, fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.clickable {
                     Toast.makeText(context, "준비 중인 기능이에요.", Toast.LENGTH_SHORT).show()
