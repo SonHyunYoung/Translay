@@ -94,7 +94,7 @@ fun MainScreen(
                                     shadowElevation = 8.dp,
                                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                    modifier = Modifier.width(240.dp)
+                                    modifier = Modifier.width(200.dp)
                                 ) {
                                     Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                                         // 헤더: 아바타 + 이름 + 보조 텍스트
