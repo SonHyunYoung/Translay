@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,21 +36,23 @@ private fun Section(text: String) {
 }
 
 @Composable
-private fun ThemeCard(label: String, color: Color, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    Column(modifier.clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier.fillMaxWidth().height(72.dp)
-                .background(color, RoundedCornerShape(8.dp))
-                .border(
-                    if (selected) 3.dp else 1.dp,
-                    if (selected) accentColor() else Color.Gray,
-                    RoundedCornerShape(8.dp)
-                )
-        )
-        Spacer(Modifier.height(6.dp))
+private fun ThemeCard(label: String, color: Color, textColor: Color, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Box(
+        modifier
+            .height(72.dp)
+            .background(color, RoundedCornerShape(8.dp))
+            .border(
+                if (selected) 3.dp else 1.dp,
+                if (selected) accentColor() else Color.Gray,
+                RoundedCornerShape(8.dp)
+            )
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
         Text(
-            label, fontFamily = Pretendard,
-            fontWeight = if (selected) FontWeight.Black else FontWeight.Bold, fontSize = 14.sp
+            label, color = textColor, fontFamily = Pretendard,
+            fontWeight = if (selected) FontWeight.Black else FontWeight.Bold, fontSize = 15.sp
         )
     }
 }
@@ -94,9 +97,9 @@ fun AccountScreen(onDone: () -> Unit, onDeleted: () -> Unit, vm: AccountViewMode
             Modifier.padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ThemeCard("라이트", Color(0xFFFFFFFF), themeMode == "light", { ThemeManager.set(context, "light") }, Modifier.weight(1f))
-            ThemeCard("다크", Color(0xFF1C1B1F), themeMode == "dark", { ThemeManager.set(context, "dark") }, Modifier.weight(1f))
-            ThemeCard("시스템 설정", Color(0xFFBDBDBD), themeMode == "system", { ThemeManager.set(context, "system") }, Modifier.weight(1f))
+            ThemeCard("라이트", Color(0xFFFFFFFF), Color.Black, themeMode == "light", { ThemeManager.set(context, "light") }, Modifier.weight(1f))
+            ThemeCard("다크", Color(0xFF1C1B1F), Color.White, themeMode == "dark", { ThemeManager.set(context, "dark") }, Modifier.weight(1f))
+            ThemeCard("시스템 설정", Color(0xFFBDBDBD), Color.Black, themeMode == "system", { ThemeManager.set(context, "system") }, Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(24.dp))
