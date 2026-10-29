@@ -22,16 +22,16 @@ fun ProfileSelectScreen(
     LaunchedEffect(Unit) { vm.load() }
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        ProfileHeader("프로필 선택", "접속할 프로필을 선택해주세요")
+        ProfileHeader("프로필 선택", "접속할 프로필을 선택해주십시오.")
         if (s.loading) CircularProgressIndicator()
         s.message?.let {
             Text(it, color = MaterialTheme.colorScheme.error, fontFamily = Pretendard, fontSize = 13.sp)
         }
         ProfileGrid(s, showAdd = true, onProfile = { vm.select(it); onSelected() }, onAdd = { vm.openCreate() })
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(40.dp))
         BlueButton(
             "프로필 편집", onEdit,
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp)
+            Modifier.fillMaxWidth().padding(horizontal = 30.dp).height(56.dp)
         )
     }
     if (s.dialogOpen) ProfileDialog(s, vm)

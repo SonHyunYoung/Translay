@@ -62,9 +62,9 @@ internal fun ProfileItem(
         Modifier.width(120.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Avatar(96, color, content)
+        Avatar(115, color, content)
         Spacer(Modifier.height(8.dp))
-        Text(label, fontFamily = Pretendard, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label, fontFamily = Pretendard, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -78,11 +78,11 @@ internal fun ProfileGrid(
     val items: List<Profile?> = s.profiles + if (showAdd && s.canAdd) listOf(null) else emptyList()
     Column(
         Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        verticalArrangement = Arrangement.spacedBy(45.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         items.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(50.dp)) {
                 row.forEach { p ->
                     if (p != null) {
                         val color = avatarColor(s.profiles.indexOf(p))
@@ -103,7 +103,7 @@ internal fun BlueButton(text: String, onClick: () -> Unit, modifier: Modifier = 
     Button(
         onClick = onClick, modifier = modifier, shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
-    ) { Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+    ) { Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 25.sp) }
 }
 
 /** 로고+라인은 전체 폭, 제목/부제는 24dp 안쪽 왼쪽 정렬 */
@@ -123,7 +123,7 @@ internal fun ProfileHeader(title: String, subtitle: String? = null) {
             if (subtitle != null) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    subtitle, fontFamily = Pretendard, fontSize = 13.sp,
+                    subtitle, fontFamily = Pretendard, fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
