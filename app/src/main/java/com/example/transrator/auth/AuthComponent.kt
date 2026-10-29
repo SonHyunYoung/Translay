@@ -45,7 +45,7 @@ internal fun BrandButton(
 ) {
     Button(
         onClick = onClick, enabled = enabled && !loading,
-        modifier = modifier.fillMaxWidth().height(52.dp),
+        modifier = modifier.fillMaxWidth().height(60.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = BrandBlue, contentColor = Color.White,
@@ -54,7 +54,7 @@ internal fun BrandButton(
         )
     ) {
         if (loading) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
-        else Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        else Text(text, fontFamily = Pretendard, fontWeight = FontWeight.Bold, fontSize = 25.sp)
     }
 }
 
@@ -100,11 +100,11 @@ internal fun FormField(
             Modifier.padding(start = 4.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(label, fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+            Text(label, fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 20.sp)
             if (labelHint != null) {
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    labelHint, fontFamily = Pretendard, fontSize = 11.sp,
+                    labelHint, fontFamily = Pretendard, fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

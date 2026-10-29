@@ -45,7 +45,7 @@ fun SignUpScreen(
         Text("회원가입", fontFamily = Pretendard, fontWeight = FontWeight.Black, fontSize = 32.sp, color = BrandBlue)
         Spacer(Modifier.height(6.dp))
         Text(
-            "회원가입을 통해 Translay의 실시간 번역을 경험해보세요!", fontFamily = Pretendard, fontSize = 13.sp,
+            "회원가입을 통해 Translay의 실시간 번역을 경험해보세요!", fontFamily = Pretendard, fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(24.dp))
@@ -105,10 +105,10 @@ fun SignUpScreen(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("이미 계정이 있으신가요? ", fontFamily = Pretendard, fontSize = 13.sp)
+            Text("이미 계정이 있으신가요? ", fontFamily = Pretendard, fontSize = 15.sp)
             Text(
                 "로그인 페이지로", fontFamily = Pretendard, fontWeight = FontWeight.Bold,
-                fontSize = 13.sp, color = accentColor(),
+                fontSize = 15.sp, color = accentColor(),
                 modifier = Modifier.clickable(onClick = onBack).padding(vertical = 6.dp)
             )
         }
