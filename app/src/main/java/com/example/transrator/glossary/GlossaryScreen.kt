@@ -128,7 +128,7 @@ private fun GlossaryList(s: GlossaryUiState, vm: GlossaryViewModel) {
         // 1. 등록 버튼
         Button(
             onClick = { vm.openDialog("main") },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 36.dp).height(64.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 40.dp).height(64.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
         ) {
