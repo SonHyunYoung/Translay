@@ -31,9 +31,8 @@ import com.example.transrator.ui.theme.Pretendard
 
 private val FONT_OPTIONS = listOf(
     "default" to "시스템 기본",
-    "sans" to "고딕(산세리프)",
-    "serif" to "명조(세리프)",
-    "mono" to "고정폭",
+    "sans" to "고딕",
+    "serif" to "명조",
     "pretendard" to "Pretendard"
 )
 
@@ -44,7 +43,6 @@ private val TEXT_COLORS = listOf(0xFF000000, 0xFFFFFFFF)
 fun fontFamilyFor(key: String): FontFamily = when (key) {
     "sans" -> FontFamily.SansSerif
     "serif" -> FontFamily.Serif
-    "mono" -> FontFamily.Monospace
     "pretendard" -> Pretendard
     else -> FontFamily.Default
 }
