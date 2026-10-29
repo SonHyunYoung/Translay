@@ -137,7 +137,7 @@ fun SettingsScreen(onDone: () -> Unit) {
         ) {
             val previewSp = with(density) { sizePx.toDp().value }.sp
             Text(
-                "번역 오버레이 표기 예시입니다.",
+                "번역 결과가 다음과 같이 표시됩니다.",
                 color = Color(textColor),
                 fontFamily = fontFamilyFor(fontKey),
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
