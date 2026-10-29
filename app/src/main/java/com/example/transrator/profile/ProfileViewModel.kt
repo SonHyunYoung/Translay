@@ -21,7 +21,9 @@ data class ProfileUiState(
     val langInput: String = "ja",       // 원문 언어 (ja / zh / en)
     val dialogError: String? = null,
     val confirmDelete: Boolean = false,
+    val toast: String? = null,
     val saving: Boolean = false
+
 ) {
     val canAdd get() = profiles.size < MAX_PROFILES
 }
@@ -102,12 +104,11 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                 .onSuccess {
                     if (tokens.profileId() == p.profile_id) tokens.saveProfileId(-1)
                     closeDialog()
-                    _s.value = _s.value.copy(saving = false)
+                    _s.value = _s.value.copy(saving = false, toast = "프로필이 삭제되었습니다.")
                     load()
-                }
-                .onFailure {
-                    _s.value = _s.value.copy(saving = false, confirmDelete = false, dialogError = it.message)
                 }
         }
     }
+
+    fun toastShown() { _s.value = _s.value.copy(toast = null) }
 }
