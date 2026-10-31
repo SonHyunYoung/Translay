@@ -23,7 +23,7 @@ class RegionPickerView(
     private val RED = Color.parseColor("#E53935")
     private val BLUE = Color.parseColor("#1E88E5")
     private val text = Paint().apply { color = Color.WHITE; textSize = 16 * dp; isFakeBoldText = true }
-    private val on = Paint().apply { color = Color.parseColor("#07357B") }
+    private val on = Paint().apply { color = Color.parseColor("#1F5FBF") }
     private val off = Paint().apply { color = Color.argb(200, 90, 90, 90) }
 
     private data class Btn(val label: String, val rect: RectF, val action: () -> Unit)
@@ -35,7 +35,7 @@ class RegionPickerView(
     private fun buildButtons() {
         buttons.clear()
         val h = 48 * dp
-        val y = height - h - 24 * dp
+        val y = height - h - 96 * dp
         val w = (width - 16 * dp * 3) / 2f
         buttons.add(Btn("대사 영역", RectF(16 * dp, y - h - 12 * dp, 16 * dp + w, y - 12 * dp)) { mode = Mode.DIALOG; invalidate() })
         buttons.add(Btn("이름 영역(선택)", RectF(32 * dp + w, y - h - 12 * dp, 32 * dp + 2 * w, y - 12 * dp)) { mode = Mode.NAME; invalidate() })
