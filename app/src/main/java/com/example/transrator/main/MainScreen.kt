@@ -231,11 +231,12 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
             )
             Spacer(Modifier.height(18.dp))
             listOf(
-                "번역 시작 버튼을 누르고 화면 캡처를 허용합니다.",
-                "게임에 접속 후 번역을 원하는 스토리를 열람합니다.",
-                "'시작' 버튼을 클릭하면 번역이 시작됩니다.",
+                "처음 한 번, 번역 설정 탭에서 번역 영역을 지정해주세요.",
+                "번역 시작 버튼을 누르고 화면 캡처를 허용해주세요.",
+                "게임에 접속해 번역할 스토리를 열어주세요.",
+                "화면의 '시작' 버튼을 눌러 번역을 시작하세요."
             ).forEachIndexed { i, step ->
-                Row(Modifier.padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {   // 8dp → 14dp
+                Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {   // 8dp → 14dp
                     Box(
                         Modifier.size(32.dp).background(BrandBlue, CircleShape),
                         contentAlignment = Alignment.Center

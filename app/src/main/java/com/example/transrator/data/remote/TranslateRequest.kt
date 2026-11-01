@@ -3,7 +3,7 @@ package com.example.transrator.data.remote
 data class TranslateRequest(
     val profileId: Int,
     val text: String,
-    val context: List<ContextItem> = emptyList()
+    val speaker: String? = null
 )
 
 data class ContextItem(
@@ -12,7 +12,8 @@ data class ContextItem(
 )
 
 data class TranslateResponse(
-    val message: String,
+    val message: String?,
     val originalText: String?,
-    val translatedText: String?
+    val translatedText: String?,
+    val speakerName: String? = null
 )

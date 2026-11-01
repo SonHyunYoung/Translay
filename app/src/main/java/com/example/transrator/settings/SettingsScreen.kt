@@ -1,5 +1,8 @@
 package com.example.transrator.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.transrator.auth.accentColor
 import com.example.transrator.capture.CaptureResult
+import com.example.transrator.capture.RegionPickerService
 import com.example.transrator.data.local.SettingsManager
 import com.example.transrator.data.local.TogglePos
 import com.example.transrator.ui.theme.BrandBlue
@@ -223,11 +227,20 @@ fun SettingsScreen(onDone: () -> Unit) {
         // ---- 버튼 ----
         Button(
             onClick = {
-                if (CaptureResult.running.value) {
-                    CaptureResult.pickRegionSignal.value += 1
+                if (!Settings.canDrawOverlays(context)) {
+                    Toast.makeText(context, "'다른 앱 위에 표시' 권한이 필요해요.", Toast.LENGTH_LONG).show()
+                    context.startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:${context.packageName}")
+                        )
+                    )
                 } else {
+                    context.startService(Intent(context, RegionPickerService::class.java))
                     Toast.makeText(
-                        context, "메인 페이지에서 번역 시작 버튼을 눌러 화면 캡처 허용이 필요합니다.", Toast.LENGTH_LONG
+                        context,
+                        "게임 화면으로 이동해서 대사창이 보이면 '영역 지정 시작'을 눌러주세요.",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             },

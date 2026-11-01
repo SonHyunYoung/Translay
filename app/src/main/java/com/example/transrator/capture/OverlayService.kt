@@ -6,6 +6,11 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.os.IBinder
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.StyleSpan
+import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -33,10 +38,10 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d("OVERLAY", "서비스 시작")
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        // 저장된 번역 설정 읽기
         val st = SettingsManager(this).load()
 
         val textView = object : TextView(this) {
@@ -46,10 +51,11 @@ class OverlayService : Service() {
             }
         }.apply {
             val alpha = (st.bgAlpha * 255 / 100).coerceIn(0, 255)
-            setBackgroundColor(Color.argb(alpha, Color.red(st.bgColor), Color.green(st.bgColor), Color.blue(st.bgColor)))
+            setBackgroundColor(
+                Color.argb(alpha, Color.red(st.bgColor), Color.green(st.bgColor), Color.blue(st.bgColor))
+            )
             setTextColor(st.textColor)
-            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, st.fontSize.toFloat())
-
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, st.fontSize.toFloat())
             val base = when (st.fontKey) {
                 "sans" -> Typeface.SANS_SERIF
                 "serif" -> Typeface.SERIF
@@ -57,9 +63,6 @@ class OverlayService : Service() {
                 else -> Typeface.DEFAULT
             }
             typeface = Typeface.create(base, if (st.bold) Typeface.BOLD else Typeface.NORMAL)
-
-            typeface = Typeface.create(base, if (st.bold) Typeface.BOLD else Typeface.NORMAL)
-
             setPadding(24, 16, 24, 16)
             text = ""
             visibility = View.GONE
@@ -81,6 +84,7 @@ class OverlayService : Service() {
 
         collectJob = serviceScope.launch {
             CaptureResult.translatedText.collectLatest { translated ->
+                Log.d("OVERLAY", "수신: $translated (hidden=$hiddenByUser)")
                 if (translated.isBlank()) return@collectLatest
 
                 if (translated != lastShown) {
@@ -93,8 +97,19 @@ class OverlayService : Service() {
     }
 
     private fun showOverlay(text: String) {
-        overlayView?.text = text
-        overlayView?.visibility = View.VISIBLE
+        Log.d("OVERLAY", "표시: $text")
+        val view = overlayView ?: return
+
+        // "【이름】\n번역" 형태면 이름 줄만 굵게
+        val spannable = SpannableString(text)
+        if (text.startsWith("【")) {
+            val end = text.indexOf('\n').let { if (it < 0) text.length else it }
+            spannable.setSpan(
+                StyleSpan(Typeface.BOLD), 0, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        view.text = spannable
+        view.visibility = View.VISIBLE
     }
 
     private fun hideOverlay() {

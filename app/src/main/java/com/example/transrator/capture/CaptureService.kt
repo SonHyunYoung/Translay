@@ -15,6 +15,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -22,6 +23,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.graphics.RectF
@@ -40,16 +42,19 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import com.example.transrator.data.local.AppDatabase
-import com.example.transrator.data.remote.RetrofitClient
+import com.example.transrator.data.local.SettingsManager
+import com.example.transrator.data.local.TogglePos
 import com.example.transrator.data.local.TokenManager
-import com.example.transrator.data.remote.TranslateRequest
 import com.example.transrator.data.local.TranslationCacheEntity
+import com.example.transrator.data.remote.RetrofitClient
+import com.example.transrator.data.remote.TranslateRequest
 
 class CaptureService : Service() {
 
     private var mediaProjection: MediaProjection? = null
     private lateinit var windowManager: WindowManager
     private var captureButton: View? = null
+    private var pickerView: View? = null
 
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
@@ -59,6 +64,9 @@ class CaptureService : Service() {
     private var screenDensity = 0
 
     @Volatile private var ocrPaused = false   // 번역 표시 중 OCR 정지 여부
+
+    // 마지막 프레임의 이름 영역 크롭 (대사 확정 시 한 번만 OCR)
+    @Volatile private var lastNameBitmap: Bitmap? = null
 
     private val db by lazy { AppDatabase.getInstance(applicationContext) }
     private val tokenManager by lazy { TokenManager(applicationContext) }
@@ -72,13 +80,10 @@ class CaptureService : Service() {
 
     private val detector = ChangeDetector(stableRequired = 2)
 
-    // 번역 응답 겹침 방지 (최신 요청만 반영)
     @Volatile private var requestId = 0
-    // 탭이 들어올 때마다 증가: 탭 이전 화면에서 시작된 OCR 결과를 버리기 위함
     @Volatile private var generation = 0
 
     companion object {
-        // 이름표 제외, 본문 텍스트만 크롭 (나중에 유저 지정 영역으로 교체)
         val DIALOG_REGION = RectF(0f, 0.54f, 1f, 0.62f)
         const val CAPTURE_INTERVAL_MS = 500L
     }
@@ -91,21 +96,54 @@ class CaptureService : Service() {
 
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getRealMetrics(metrics)
+        screenDensity = metrics.densityDpi
         screenWidth = metrics.widthPixels
         screenHeight = metrics.heightPixels
-        screenDensity = metrics.densityDpi
 
-        // 유저 탭 감지 → 이전 대사 결과 무효화 + OCR 재개
         serviceScope.launch {
-            CaptureResult.resumeSignal.collectLatest {
-                if (it > 0) {
-                    requestId++
-                    generation++
-                    detector.reset()
-                    ocrPaused = false
-                    Log.d("CAPTURE", "유저 탭 감지 → 진행 중 결과 무효화, OCR 재개")
-                }
+            CaptureResult.resumeSignal.drop(1).collectLatest {
+                requestId++
+                generation++
+                detector.reset()
+                ocrPaused = false
+                Log.d("CAPTURE", "유저 탭 감지 → 진행 중 결과 무효화, OCR 재개")
             }
+        }
+
+        serviceScope.launch(Dispatchers.Main) {
+            CaptureResult.pickRegionSignal.drop(1).collectLatest { showRegionPicker() }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        try {
+            syncDisplaySize()
+            relocateToggle()
+        } catch (e: Exception) {
+            Log.e("CAPTURE", "회전 처리 실패: $e")
+        }
+    }
+
+    @Synchronized
+    private fun syncDisplaySize() {
+        val m = DisplayMetrics()
+        windowManager.defaultDisplay.getRealMetrics(m)
+        if (m.widthPixels == screenWidth && m.heightPixels == screenHeight) return
+
+        screenWidth = m.widthPixels
+        screenHeight = m.heightPixels
+        try {
+            val vd = virtualDisplay ?: return
+            imageReader?.close()
+            imageReader = ImageReader.newInstance(
+                screenWidth, screenHeight, PixelFormat.RGBA_8888, 2
+            )
+            vd.resize(screenWidth, screenHeight, screenDensity)
+            vd.surface = imageReader?.surface
+            Log.d("CAPTURE", "화면 크기 변경 감지: ${screenWidth}x${screenHeight}")
+        } catch (e: Exception) {
+            Log.e("CAPTURE", "크기 동기화 실패: $e")
         }
     }
 
@@ -164,6 +202,12 @@ class CaptureService : Service() {
             }
         }
 
+
+        val regionBtn = Button(this).apply {
+            text = "영역"
+            setOnClickListener { showRegionPicker() }
+        }
+
         val stopBtn = Button(this).apply {
             text = "종료"
             setOnClickListener { stopSelf() }
@@ -177,17 +221,89 @@ class CaptureService : Service() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
-        params.gravity = Gravity.TOP or Gravity.END
+        applyTogglePosition(params)
 
         windowManager.addView(captureButton, params)
     }
 
-    // ---------- 캡처 루프 ----------
+    private fun applyTogglePosition(params: WindowManager.LayoutParams) {
+        val layout = captureButton ?: return
+        val pos = TogglePos.from(SettingsManager(this).load().togglePos)
+
+        layout.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val w = layout.measuredWidth
+        val h = layout.measuredHeight
+        val margin = (24 * resources.displayMetrics.density).toInt()
+
+        params.gravity = Gravity.START or Gravity.TOP
+        params.x = ((screenWidth * pos.x).toInt() - w / 2)
+            .coerceIn(0, (screenWidth - w).coerceAtLeast(0))
+        params.y = if (pos.name.startsWith("TOP")) margin
+        else (screenHeight - h - margin).coerceAtLeast(0)
+    }
+
+    private fun relocateToggle() {
+        val v = captureButton ?: return
+        val params = v.layoutParams as? WindowManager.LayoutParams ?: return
+        applyTogglePosition(params)
+        windowManager.updateViewLayout(v, params)
+    }
+
+    private fun showRegionPicker() {
+        Log.d("REGION", "영역 지정 화면 표시 (이미 열림=${pickerView != null})")
+        if (pickerView != null) return
+
+        val settings = SettingsManager(this)
+        val current = settings.load()   // 저장된 영역을 불러와 수정할 수 있게 함
+
+        val view = RegionPickerView(
+            this,
+            current.dialogRegion,
+            current.nameRegion,
+            onSave = { dialog, name ->
+                Log.d("REGION", "저장: dialog=$dialog, name=$name")
+                settings.save(settings.load().copy(dialogRegion = dialog, nameRegion = name))
+                closeRegionPicker()
+            },
+            onCancel = {
+                Log.d("REGION", "취소")
+                closeRegionPicker()
+            }
+        )
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        )
+        pickerView = view
+        windowManager.addView(view, params)
+    }
+
+    private fun closeRegionPicker() {
+        pickerView?.let { windowManager.removeView(it) }
+        pickerView = null
+    }
+
     private fun startCaptureLoop() {
         if (captureJob?.isActive == true) return
+
+        if (SettingsManager(this).load().dialogRegion == null) {
+            android.widget.Toast.makeText(
+                this,
+                "번역 영역이 지정되지 않았어요. 설정에서 번역 영역을 지정하면 더 정확해요.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
         Log.d("CAPTURE", "캡처 루프 시작")
 
         captureJob = serviceScope.launch {
@@ -204,7 +320,6 @@ class CaptureService : Service() {
         captureJob = null
         ocrPaused = false
 
-        // 세션 종료 시 캐시 정리
         val profileId = tokenManager.profileId()
         serviceScope.launch(Dispatchers.IO) {
             db.translationCacheDao().clearByProfile(profileId)
@@ -212,10 +327,10 @@ class CaptureService : Service() {
         }
     }
 
-    // 한 프레임: 캡처 → 크롭 → OCR
     private fun captureAndProcess() {
-        if (ocrPaused) return   // 번역 표시 중이면 캡처/OCR 생략
+        if (ocrPaused) return
 
+        syncDisplaySize()
         val cropped = captureCropped() ?: return
         runOcr(cropped)
     }
@@ -224,24 +339,38 @@ class CaptureService : Service() {
         val image = imageReader?.acquireLatestImage() ?: return null
 
         try {
+            val w0 = image.width
+            val h0 = image.height
             val plane = image.planes[0]
-            val pixelStride = plane.pixelStride
-            val rowPadding = plane.rowStride - pixelStride * screenWidth
+            val rowPadding = plane.rowStride - plane.pixelStride * w0
 
             val full = Bitmap.createBitmap(
-                screenWidth + rowPadding / pixelStride,
-                screenHeight,
-                Bitmap.Config.ARGB_8888
+                w0 + rowPadding / plane.pixelStride, h0, Bitmap.Config.ARGB_8888
             )
             full.copyPixelsFromBuffer(plane.buffer)
 
-            // 크롭은 패딩을 뺀 screenWidth 기준
-            val x = (screenWidth * DIALOG_REGION.left).toInt()
-            val y = (screenHeight * DIALOG_REGION.top).toInt()
-            val w = (screenWidth * (DIALOG_REGION.right - DIALOG_REGION.left)).toInt()
-            val h = (screenHeight * (DIALOG_REGION.bottom - DIALOG_REGION.top)).toInt()
+            val settings = SettingsManager(this).load()
+
+            val region = settings.dialogRegion ?: DIALOG_REGION
+
+            val x = (w0 * region.left).toInt().coerceIn(0, w0 - 1)
+            val y = (h0 * region.top).toInt().coerceIn(0, h0 - 1)
+            val w = (w0 * (region.right - region.left)).toInt().coerceIn(1, w0 - x)
+            val h = (h0 * (region.bottom - region.top)).toInt().coerceIn(1, h0 - y)
 
             val cropped = Bitmap.createBitmap(full, x, y, w, h)
+
+            // 이름 영역 (지정된 경우만, 마지막 프레임 것을 보관)
+            val old = lastNameBitmap
+            lastNameBitmap = settings.nameRegion?.let { r ->
+                val nx = (w0 * r.left).toInt().coerceIn(0, w0 - 1)
+                val ny = (h0 * r.top).toInt().coerceIn(0, h0 - 1)
+                val nw = (w0 * (r.right - r.left)).toInt().coerceIn(1, w0 - nx)
+                val nh = (h0 * (r.bottom - r.top)).toInt().coerceIn(1, h0 - ny)
+                Bitmap.createBitmap(full, nx, ny, nw, nh)
+            }
+            old?.recycle()
+
             full.recycle()
             return cropped
         } finally {
@@ -255,7 +384,6 @@ class CaptureService : Service() {
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
-                // 탭 이전 화면에서 시작된 OCR 결과면 버림
                 if (myGeneration != generation) return@addOnSuccessListener
 
                 val text = visionText.text
@@ -266,7 +394,10 @@ class CaptureService : Service() {
                 if (toTranslate != null) {
                     Log.d("DETECT", "완성 감지: $toTranslate")
                     ocrPaused = true
-                    handleConfirmedText(toTranslate)
+                    recognizeSpeaker { speaker ->
+                        Log.d("SPEAKER", "이름: $speaker")
+                        handleConfirmedText(toTranslate, speaker)
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -277,29 +408,81 @@ class CaptureService : Service() {
             }
     }
 
-    private fun handleConfirmedText(text: String) {
+    /** 이름 영역을 OCR (영역 미지정/실패 시 null) */
+    private fun recognizeSpeaker(done: (String?) -> Unit) {
+        val bmp = lastNameBitmap
+        if (bmp == null || bmp.isRecycled) {
+            Log.d("SPEAKER", "이름 영역 없음")
+            done(null); return
+        }
+
+        val prepared = try {
+            val scale = 3
+            val pad = 24
+            val scaled = Bitmap.createScaledBitmap(bmp, bmp.width * scale, bmp.height * scale, true)
+            val out = Bitmap.createBitmap(
+                scaled.width + pad * 2, scaled.height + pad * 2, Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(out)
+            canvas.drawColor(android.graphics.Color.WHITE)   // 여백 색 (이름표가 어두우면 BLACK으로)
+            canvas.drawBitmap(scaled, pad.toFloat(), pad.toFloat(), null)
+            scaled.recycle()
+            out
+        } catch (e: Exception) {
+            Log.e("SPEAKER", "이름 전처리 실패: $e")
+            null
+        }
+        if (prepared == null) { done(null); return }
+
+        // 디버그: OCR에 들어가는 이름 이미지 저장 (확인 후 지우세요)
+        try {
+            java.io.FileOutputStream(java.io.File(getExternalFilesDir(null), "debug_name.png")).use {
+                prepared.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+            Log.d("SPEAKER", "debug_name.png 저장됨")
+        } catch (e: Exception) {
+            Log.e("SPEAKER", "저장 실패: $e")
+        }
+
+        Log.d("SPEAKER", "이름 입력 크기: ${prepared.width}x${prepared.height}")
+
+        recognizer.process(InputImage.fromBitmap(prepared, 0))
+            .addOnSuccessListener { r ->
+                val raw = r.text
+                Log.d("SPEAKER", "OCR 원본: '${raw.replace("\n", " / ")}'")
+                done(raw.replace(Regex("\\s+"), "").ifBlank { null })
+            }
+            .addOnFailureListener { e ->
+                Log.e("SPEAKER", "이름 OCR 실패: $e")
+                done(null)
+            }
+            .addOnCompleteListener { prepared.recycle() }
+
+    }
+
+    private fun handleConfirmedText(text: String, speaker: String?) {
         val profileId = tokenManager.profileId()
         if (profileId == -1) {
             Log.e("CACHE", "선택된 프로필이 없습니다.")
             ocrPaused = false
             return
         }
-        val normalized = ChangeDetector.normalize(text)
+        val key = ChangeDetector.normalize(text) + "#" + (speaker ?: "")
 
         serviceScope.launch(Dispatchers.IO) {
-            val cached = db.translationCacheDao().findBySourceText(profileId, normalized)
+            val cached = db.translationCacheDao().findBySourceText(profileId, key)
 
             if (cached != null) {
                 Log.d("CACHE", "캐시 히트 → 즉시 표시: ${cached.translatedText}")
                 CaptureResult.translatedText.value = cached.translatedText
             } else {
                 Log.d("CACHE", "캐시 미스 → 서버 요청")
-                requestTranslate(text, profileId, normalized)
+                requestTranslate(text, profileId, key, speaker)
             }
         }
     }
 
-    private fun requestTranslate(text: String, profileId: Int, normalized: String) {
+    private fun requestTranslate(text: String, profileId: Int, cacheKey: String, speaker: String?) {
         val token = "Bearer ${tokenManager.accessToken()}"
         val myRequestId = ++requestId
 
@@ -307,30 +490,34 @@ class CaptureService : Service() {
             try {
                 val response = RetrofitClient.api.translate(
                     token = token,
-                    request = TranslateRequest(profileId = profileId, text = text)
+                    request = TranslateRequest(
+                        profileId = profileId,
+                        text = text,
+                        speaker = speaker
+                    )
                 )
 
                 val translated = response.translatedText ?: ""
+                val name = response.speakerName
+                val shown = if (name.isNullOrBlank()) translated else "【$name】\n$translated"
 
-                // 번역 자체는 유효하므로 캐시에는 항상 저장
                 if (translated.isNotBlank()) {
                     db.translationCacheDao().insert(
                         TranslationCacheEntity(
                             profileId = profileId,
-                            sourceText = normalized,
-                            translatedText = translated
+                            sourceText = cacheKey,
+                            translatedText = shown
                         )
                     )
                 }
 
-                // 탭으로 넘어갔거나 더 최신 요청이 있으면 표시하지 않음
                 if (myRequestId != requestId) {
-                    Log.d("TRANSLATE", "오래된 요청 결과 표시 생략: $translated")
+                    Log.d("TRANSLATE", "오래된 요청 결과 표시 생략: $shown")
                     return@launch
                 }
 
-                Log.d("TRANSLATE", "번역 결과: $translated")
-                CaptureResult.translatedText.value = translated
+                Log.d("TRANSLATE", "번역 결과: $shown")
+                CaptureResult.translatedText.value = shown
 
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
@@ -369,6 +556,9 @@ class CaptureService : Service() {
         super.onDestroy()
         serviceScope.cancel()
         captureButton?.let { windowManager.removeView(it) }
+        closeRegionPicker()
+        lastNameBitmap?.recycle()
+        lastNameBitmap = null
         virtualDisplay?.release()
         imageReader?.close()
         mediaProjection?.stop()
@@ -386,9 +576,7 @@ object CaptureResult {
     val running = MutableStateFlow(false)
     val translatedText = MutableStateFlow("")
 
-    // OverlayService → CaptureService로 "탭했다" 알리는 신호
     val resumeSignal = MutableStateFlow(0)
 
-    // 설정 화면 → CaptureService로 "영역 지정 화면 띄워라" 알리는 신호
     val pickRegionSignal = MutableStateFlow(0)
 }
