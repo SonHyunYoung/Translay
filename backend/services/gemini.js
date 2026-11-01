@@ -1,27 +1,44 @@
-const { GoogleGenAI } = require('@google/genai');
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 const LANGUAGE_NAMES = { ja: '일본어', zh: '중국어', en: '영어' };
 
-async function translate({ text, sourceLanguage, glossary, context, speaker }) {
-  const prompt = buildPrompt({ text, sourceLanguage, glossary, context, speaker });
+async function translate({ text, sourceLanguage, glossary, speaker }) {
+  const prompt = buildPrompt({ text, sourceLanguage, glossary, speaker });
 
-  const interaction = await ai.interactions.create({
-    model: 'gemini-3.5-flash-lite',
-    input: prompt,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  const t0 = Date.now();
 
-  return interaction.output_text;
+  try {
+    const res = await fetch(`${process.env.LLM_BASE_URL}/v1/gateway/chat/completions/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.LLM_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: process.env.LLM_MODEL || 'gemini-3.5-flash-lite',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3
+      }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      throw new Error(`LLM ${res.status}: ${await res.text()}`);
+    }
+    const data = await res.json();
+    console.log(`[LLM] ${Date.now() - t0}ms`);
+
+    return (data.choices?.[0]?.message?.content || '').trim();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-function buildPrompt({ text, sourceLanguage, glossary, context, speaker }) {
+function buildPrompt({ text, sourceLanguage, glossary, speaker }) {
   const language = LANGUAGE_NAMES[sourceLanguage] || sourceLanguage || '일본어';
 
-  // 현재 화자 (있을 때만)
   const speakerBlock = speaker ? `【현재 화자】\n${speaker}\n` : '';
 
-  // 단어 용어 블록 (지명, 아이템 등)
   let wordBlock = '';
   if (glossary && glossary.length > 0) {
     wordBlock = '【고유명사】\n';
@@ -29,7 +46,7 @@ function buildPrompt({ text, sourceLanguage, glossary, context, speaker }) {
   }
 
   const speakerRule = speaker
-    ? '\n7. 이 대사는 위 【현재 화자】가 말하는 것입니다. 화자의 입장에 맞는 어투로 번역하세요.'
+    ? '\n6. 이 대사는 위 【현재 화자】가 말하는 것입니다. 화자의 입장에 맞는 어투로 번역하세요.'
     : '';
 
   return `당신은 ${language}를 한국어로 번역하는 전문가입니다.
