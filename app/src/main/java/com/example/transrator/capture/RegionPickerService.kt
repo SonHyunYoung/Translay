@@ -3,6 +3,7 @@ package com.example.transrator.capture
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
@@ -96,6 +97,11 @@ class RegionPickerService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         )
+        // 카메라 구멍(컷아웃) 영역까지 덮어서 오버레이가 실제 화면 전체와 일치하게 함
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            params.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        }
         try {
             windowManager.addView(view, params)
             pickerView = view
