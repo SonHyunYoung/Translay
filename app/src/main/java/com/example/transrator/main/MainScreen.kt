@@ -231,14 +231,15 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
             )
             Spacer(Modifier.height(18.dp))
             listOf(
-                "처음 한 번, 번역 설정 탭에서 번역 영역을 지정해주세요.",
-                "번역 시작 버튼을 누르고 화면 캡처를 허용해주세요.",
-                "게임에 접속해 번역할 스토리를 열어주세요.",
-                "화면의 '시작' 버튼을 눌러 번역을 시작하세요."
+                "번역 설정 탭에서 번역 영역을 지정합니다.",
+                "번역 시작 버튼을 누르고 화면 캡처를 허용합니다.",
+                "게임에 접속해 번역을 원하는 스토리를 열어줍니다.",
+                "화면의 '시작' 버튼을 눌러 번역을 시작합니다.",
+                "번역 중지를 원하면, 중지 버튼 혹은 번역 종료 버튼을 눌러 종료합니다."
             ).forEachIndexed { i, step ->
-                Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {   // 8dp → 14dp
+                Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {   // 8dp → 14dp
                     Box(
-                        Modifier.size(32.dp).background(BrandBlue, CircleShape),
+                        Modifier.size(28.dp).background(BrandBlue, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -256,12 +257,13 @@ private fun HomeTab(running: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
         }
 
         Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(12.dp))
 
         // 3. 면책 문구 (맨 아래)
         HorizontalDivider()
         Spacer(Modifier.height(12.dp))
         Text(
-            "본 앱은 AI 번역 결과를 사용합니다. AI 번역은 정확하지 않을 수 있습니다.\n" ,
+            "Translay는 AI 번역을 사용하므로 번역에 몇 초가 소요될 수 있으며, 번역 결과가 실제 원문과 다를 수 있습니다.\n" ,
             fontFamily = Pretendard, fontSize = 13.sp, lineHeight = 19.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()
