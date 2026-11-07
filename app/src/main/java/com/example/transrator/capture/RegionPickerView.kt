@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.abs
@@ -77,6 +78,10 @@ class RegionPickerView(
     private fun clamp(v: Float, lo: Float, hi: Float) = if (lo > hi) lo else v.coerceIn(lo, hi)
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        val loc = IntArray(2)
+        getLocationOnScreen(loc)
+        Log.d("REGION", "뷰=${width}x${height} 위치=${loc[0]},${loc[1]} 실제화면=${resources.displayMetrics.widthPixels}x${resources.displayMetrics.heightPixels}")
+
         if (!initialized && w > 0 && h > 0) {
             dialog = initialDialog?.let { RectF(it.left * w, it.top * h, it.right * w, it.bottom * h) }
             name = initialName?.let { RectF(it.left * w, it.top * h, it.right * w, it.bottom * h) }

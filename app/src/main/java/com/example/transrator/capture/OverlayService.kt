@@ -32,9 +32,11 @@ class OverlayService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var collectJob: Job? = null
+    private var loadingJob: Job? = null
 
     private var hiddenByUser = false
     private var lastShown = ""
+    private var showingLoading = false
 
     override fun onCreate() {
         super.onCreate()
@@ -94,11 +96,35 @@ class OverlayService : Service() {
                 if (!hiddenByUser) showOverlay(translated)
             }
         }
+
+        // 번역 요청 중 표시
+        loadingJob = serviceScope.launch {
+            CaptureResult.translating.collectLatest { translating ->
+                if (translating) {
+                    hiddenByUser = false
+                    showLoading()
+                } else if (showingLoading) {
+                    // 결과 없이 끝남(실패 등) → 안내 문구 제거
+                    showingLoading = false
+                    overlayView?.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun showLoading() {
+        val view = overlayView ?: return
+        showingLoading = true
+        view.text = "번역 중..."
+        view.alpha = 0.7f
+        view.visibility = View.VISIBLE
     }
 
     private fun showOverlay(text: String) {
         Log.d("OVERLAY", "표시: $text")
         val view = overlayView ?: return
+        showingLoading = false
+        view.alpha = 1f
 
         // "【이름】\n번역" 형태면 이름 줄만 굵게
         val spannable = SpannableString(text)
@@ -114,6 +140,7 @@ class OverlayService : Service() {
 
     private fun hideOverlay() {
         hiddenByUser = true
+        showingLoading = false
         overlayView?.visibility = View.GONE
         CaptureResult.resumeSignal.value = CaptureResult.resumeSignal.value + 1
     }
@@ -121,6 +148,7 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         collectJob?.cancel()
+        loadingJob?.cancel()
         serviceScope.cancel()
         overlayView?.let { windowManager.removeView(it) }
     }

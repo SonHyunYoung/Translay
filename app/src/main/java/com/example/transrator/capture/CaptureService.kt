@@ -48,13 +48,14 @@ import com.example.transrator.data.local.TokenManager
 import com.example.transrator.data.local.TranslationCacheEntity
 import com.example.transrator.data.remote.RetrofitClient
 import com.example.transrator.data.remote.TranslateRequest
+import java.io.File
+import java.io.FileOutputStream
 
 class CaptureService : Service() {
 
     private var mediaProjection: MediaProjection? = null
     private lateinit var windowManager: WindowManager
     private var captureButton: View? = null
-    private var pickerView: View? = null
 
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
@@ -63,7 +64,7 @@ class CaptureService : Service() {
     private var screenHeight = 0
     private var screenDensity = 0
 
-    @Volatile private var ocrPaused = false   // 번역 표시 중 OCR 정지 여부
+    @Volatile private var ocrPaused = false
 
     // 마지막 프레임의 이름 영역 크롭 (대사 확정 시 한 번만 OCR)
     @Volatile private var lastNameBitmap: Bitmap? = null
@@ -106,12 +107,9 @@ class CaptureService : Service() {
                 generation++
                 detector.reset()
                 ocrPaused = false
+                CaptureResult.translating.value = false
                 Log.d("CAPTURE", "유저 탭 감지 → 진행 중 결과 무효화, OCR 재개")
             }
-        }
-
-        serviceScope.launch(Dispatchers.Main) {
-            CaptureResult.pickRegionSignal.drop(1).collectLatest { showRegionPicker() }
         }
     }
 
@@ -202,12 +200,6 @@ class CaptureService : Service() {
             }
         }
 
-
-        val regionBtn = Button(this).apply {
-            text = "영역"
-            setOnClickListener { showRegionPicker() }
-        }
-
         val stopBtn = Button(this).apply {
             text = "종료"
             setOnClickListener { stopSelf() }
@@ -256,54 +248,8 @@ class CaptureService : Service() {
         windowManager.updateViewLayout(v, params)
     }
 
-    private fun showRegionPicker() {
-        Log.d("REGION", "영역 지정 화면 표시 (이미 열림=${pickerView != null})")
-        if (pickerView != null) return
-
-        val settings = SettingsManager(this)
-        val current = settings.load()   // 저장된 영역을 불러와 수정할 수 있게 함
-
-        val view = RegionPickerView(
-            this,
-            current.dialogRegion,
-            current.nameRegion,
-            onSave = { dialog, name ->
-                Log.d("REGION", "저장: dialog=$dialog, name=$name")
-                settings.save(settings.load().copy(dialogRegion = dialog, nameRegion = name))
-                closeRegionPicker()
-            },
-            onCancel = {
-                Log.d("REGION", "취소")
-                closeRegionPicker()
-            }
-        )
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
-        )
-        pickerView = view
-        windowManager.addView(view, params)
-    }
-
-    private fun closeRegionPicker() {
-        pickerView?.let { windowManager.removeView(it) }
-        pickerView = null
-    }
-
     private fun startCaptureLoop() {
         if (captureJob?.isActive == true) return
-
-        if (SettingsManager(this).load().dialogRegion == null) {
-            android.widget.Toast.makeText(
-                this,
-                "번역 영역이 지정되지 않았어요. 설정에서 번역 영역을 지정하면 더 정확해요.",
-                android.widget.Toast.LENGTH_LONG
-            ).show()
-        }
         Log.d("CAPTURE", "캡처 루프 시작")
 
         captureJob = serviceScope.launch {
@@ -319,6 +265,7 @@ class CaptureService : Service() {
         captureJob?.cancel()
         captureJob = null
         ocrPaused = false
+        CaptureResult.translating.value = false
 
         val profileId = tokenManager.profileId()
         serviceScope.launch(Dispatchers.IO) {
@@ -360,7 +307,6 @@ class CaptureService : Service() {
 
             val cropped = Bitmap.createBitmap(full, x, y, w, h)
 
-            // 이름 영역 (지정된 경우만, 마지막 프레임 것을 보관)
             val old = lastNameBitmap
             lastNameBitmap = settings.nameRegion?.let { r ->
                 val nx = (w0 * r.left).toInt().coerceIn(0, w0 - 1)
@@ -408,56 +354,46 @@ class CaptureService : Service() {
             }
     }
 
-    /** 이름 영역을 OCR (영역 미지정/실패 시 null) */
+    /** 이름 영역을 OCR (영역 미지정/실패 시 null). 전처리 없이 원본 크롭을 읽는다 */
     private fun recognizeSpeaker(done: (String?) -> Unit) {
         val bmp = lastNameBitmap
         if (bmp == null || bmp.isRecycled) {
-            Log.d("SPEAKER", "이름 영역 없음")
+            Log.d("SPEAKER", "이름 영역 없음 (미지정이거나 아직 캡처 전)")
             done(null); return
         }
 
-        val prepared = try {
-            val scale = 3
-            val pad = 24
-            val scaled = Bitmap.createScaledBitmap(bmp, bmp.width * scale, bmp.height * scale, true)
-            val out = Bitmap.createBitmap(
-                scaled.width + pad * 2, scaled.height + pad * 2, Bitmap.Config.ARGB_8888
-            )
-            val canvas = android.graphics.Canvas(out)
-            canvas.drawColor(android.graphics.Color.WHITE)   // 여백 색 (이름표가 어두우면 BLACK으로)
-            canvas.drawBitmap(scaled, pad.toFloat(), pad.toFloat(), null)
-            scaled.recycle()
-            out
+        val input = try {
+            bmp.copy(Bitmap.Config.ARGB_8888, false)
         } catch (e: Exception) {
-            Log.e("SPEAKER", "이름 전처리 실패: $e")
+            Log.e("SPEAKER", "이름 이미지 준비 실패: $e")
             null
         }
-        if (prepared == null) { done(null); return }
+        if (input == null) { done(null); return }
 
-        // 디버그: OCR에 들어가는 이름 이미지 저장 (확인 후 지우세요)
+        // 디버그: OCR에 실제로 들어가는 이름 이미지 (확인 후 이 블록을 지우세요)
         try {
-            java.io.FileOutputStream(java.io.File(getExternalFilesDir(null), "debug_name.png")).use {
-                prepared.compress(Bitmap.CompressFormat.PNG, 100, it)
+            FileOutputStream(File(getExternalFilesDir(null), "debug_name.png")).use {
+                input.compress(Bitmap.CompressFormat.PNG, 100, it)
             }
-            Log.d("SPEAKER", "debug_name.png 저장됨")
         } catch (e: Exception) {
-            Log.e("SPEAKER", "저장 실패: $e")
+            Log.e("SPEAKER", "디버그 저장 실패: $e")
         }
+        Log.d("SPEAKER", "이름 입력 크기: ${input.width}x${input.height}")
 
-        Log.d("SPEAKER", "이름 입력 크기: ${prepared.width}x${prepared.height}")
-
-        recognizer.process(InputImage.fromBitmap(prepared, 0))
+        recognizer.process(InputImage.fromBitmap(input, 0))
             .addOnSuccessListener { r ->
-                val raw = r.text
-                Log.d("SPEAKER", "OCR 원본: '${raw.replace("\n", " / ")}'")
+                // 줄이 여럿이면(후리가나 + 이름) 글씨가 가장 큰 줄을 이름으로 사용
+                val lines = r.textBlocks.flatMap { it.lines }
+                val best = lines.maxByOrNull { it.boundingBox?.height() ?: 0 }
+                val raw = best?.text ?: r.text
+                Log.d("SPEAKER", "줄 ${lines.size}개 → 선택: '$raw'")
                 done(raw.replace(Regex("\\s+"), "").ifBlank { null })
             }
             .addOnFailureListener { e ->
                 Log.e("SPEAKER", "이름 OCR 실패: $e")
                 done(null)
             }
-            .addOnCompleteListener { prepared.recycle() }
-
+            .addOnCompleteListener { input.recycle() }
     }
 
     private fun handleConfirmedText(text: String, speaker: String?) {
@@ -485,6 +421,7 @@ class CaptureService : Service() {
     private fun requestTranslate(text: String, profileId: Int, cacheKey: String, speaker: String?) {
         val token = "Bearer ${tokenManager.accessToken()}"
         val myRequestId = ++requestId
+        CaptureResult.translating.value = true
 
         serviceScope.launch(Dispatchers.IO) {
             try {
@@ -522,6 +459,9 @@ class CaptureService : Service() {
             } catch (e: Exception) {
                 Log.e("TRANSLATE", "번역 실패: $e")
                 if (myRequestId == requestId) ocrPaused = false
+            } finally {
+                // 최신 요청일 때만 "번역 중" 해제 (이전 요청이 늦게 끝나도 새 요청 표시 유지)
+                if (myRequestId == requestId) CaptureResult.translating.value = false
             }
         }
     }
@@ -556,7 +496,6 @@ class CaptureService : Service() {
         super.onDestroy()
         serviceScope.cancel()
         captureButton?.let { windowManager.removeView(it) }
-        closeRegionPicker()
         lastNameBitmap?.recycle()
         lastNameBitmap = null
         virtualDisplay?.release()
@@ -564,6 +503,7 @@ class CaptureService : Service() {
         mediaProjection?.stop()
         recognizer.close()
         CaptureResult.running.value = false
+        CaptureResult.translating.value = false
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -577,6 +517,9 @@ object CaptureResult {
     val translatedText = MutableStateFlow("")
 
     val resumeSignal = MutableStateFlow(0)
+
+    // 서버에 번역 요청 중인지 (캐시 히트에서는 켜지 않음)
+    val translating = MutableStateFlow(false)
 
     val pickRegionSignal = MutableStateFlow(0)
 }
