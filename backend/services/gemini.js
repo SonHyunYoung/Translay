@@ -34,6 +34,74 @@ async function translate({ text, sourceLanguage, glossary, speaker }) {
   }
 }
 
+/**
+ * OCR로 읽은 이름표가 한자를 잘못 인식했을 때,
+ * 등록된 캐릭터 목록 중 같은 인물을 LLM이 고르게 한다.
+ * - matchSpeaker(로컬)가 실패한 경우에만 호출된다.
+ * - 번역용과 다른 가벼운 모델(LLM_NAME_MODEL)을 쓴다.
+ * - candidates: [{ source: 원문 이름, target: 한국어 번역명 }, ...]
+ * - 반환: 선택된 candidate 객체 또는 null(없음/실패/타임아웃)
+ */
+async function resolveSpeaker({ ocrName, candidates }) {
+  if (!ocrName || !candidates || candidates.length === 0) return null;
+
+  const list = candidates.map((c, i) => `${i + 1}. ${c.source} (${c.target})`).join('\n');
+  const prompt = `게임 화면의 캐릭터 이름표를 OCR로 읽었는데, 글자가 한두 개 잘못 인식되었을 수 있습니다.
+(예: 획이 많은 한자가 모양이 비슷한 다른 한자로 읽히거나, 일부 글자가 빠짐)
+아래 등록된 캐릭터 중에서 OCR 결과가 가리키는 인물을 하나 고르세요.
+
+[OCR 결과]
+${ocrName}
+
+[등록된 캐릭터]  (번호. 원문 이름 (한국어 이름))
+${list}
+
+규칙:
+- OCR 결과와 글자 모양이 닮았거나 글자 수·구성이 비슷한 후보를 가장 가까운 순으로 판단해 하나를 고르세요.
+- 닮은 후보가 하나도 없을 때만 NONE 이라고 출력하세요.
+- 출력은 후보의 번호 숫자 하나, 또는 NONE 만 쓰세요. 설명이나 다른 글자는 절대 쓰지 마세요.`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  const t0 = Date.now();
+
+  try {
+    const res = await fetch(`${process.env.LLM_BASE_URL}/v1/gateway/chat/completions/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.LLM_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: process.env.LLM_NAME_MODEL || 'gemini-3.5-flash-lite',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0
+      }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      throw new Error(`LLM ${res.status}: ${await res.text()}`);
+    }
+    const data = await res.json();
+    const out = (data.choices?.[0]?.message?.content || '').trim();
+    console.log(`[이름추론] ${Date.now() - t0}ms, 후보 ${candidates.length}명, '${ocrName}' → 응답='${out}'`);
+
+    if (!out || /^none/i.test(out)) return null;
+
+    const m = out.match(/\d+/);
+    if (!m) return null;
+    const idx = parseInt(m[0], 10) - 1;
+    return candidates[idx] || null;
+
+  } catch (e) {
+    console.error(`[이름추론] 실패: ${e.message || e}`);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function buildPrompt({ text, sourceLanguage, glossary, speaker }) {
   const language = LANGUAGE_NAMES[sourceLanguage] || sourceLanguage || '일본어';
 
@@ -64,4 +132,4 @@ ${wordBlock}
 ${text}`;
 }
 
-module.exports = { translate };
+module.exports = { translate, resolveSpeaker };
