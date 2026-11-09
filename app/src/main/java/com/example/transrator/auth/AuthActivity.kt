@@ -2,7 +2,6 @@ package com.example.transrator.auth
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,13 +19,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transrator.MainActivity
+import com.example.transrator.PermissionGuardActivity
 import com.example.transrator.data.local.ThemeManager
 import com.example.transrator.data.local.TokenManager
 import com.example.transrator.profile.ProfileEditScreen
 import com.example.transrator.profile.ProfileSelectScreen
 import com.example.transrator.ui.theme.TransratorTheme
 
-class AuthActivity : ComponentActivity() {
+class AuthActivity : PermissionGuardActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.init(this)
         super.onCreate(savedInstanceState)

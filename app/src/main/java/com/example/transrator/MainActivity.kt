@@ -4,19 +4,15 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
-import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,7 +28,7 @@ import com.example.transrator.main.MainViewModel
 import com.example.transrator.profile.avatarColor
 import com.example.transrator.ui.theme.TransratorTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : PermissionGuardActivity() {
 
     private val vm: MainViewModel by viewModels()
     private var lastBackPressed = 0L
@@ -116,13 +112,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startTranslate() {
-        if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "'다른 앱 위에 표시' 권한이 필요해요.", Toast.LENGTH_LONG).show()
-            startActivity(
-                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            )
-            return
-        }
+        // 공통 Activity가 권한을 강제하지만, 회수된 경우를 대비한 안전장치
+        if (!ensureOverlayPermission()) return
         val pm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         projectionLauncher.launch(pm.createScreenCaptureIntent())
     }
